@@ -10,7 +10,7 @@ async function ensureTopics(): Promise<void> {
   const admin = kafka.admin();
   try {
     await admin.connect();
-    const topics = Object.values(config.topics);
+    const topics = Object.values(config.topics) as string[];
     await admin.createTopics({
       topics: topics.map((topic) => ({ topic, numPartitions: 1, replicationFactor: 1 })),
       waitForLeaders: false,

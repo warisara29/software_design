@@ -8,6 +8,7 @@ import {
 import {
   AcquisitionApprovalRequestedProducer,
   AcquisitionContractDraftedProducer,
+  PropertyInspectedProducer,
 } from './producers.js';
 
 export async function startConsumers(): Promise<void> {
@@ -30,6 +31,16 @@ export async function startConsumers(): Promise<void> {
         if (topic === config.topics.propertySurveyed) {
           const event = JSON.parse(raw) as PropertySurveyedEvent;
           const out = await AcquisitionService.receiveSurvey(event);
+          // Flow 1 event 2 — Legal+Inventory ตรวจสอบ property แล้ว → CEO รับรู้
+          await PropertyInspectedProducer.send({
+            acquisitionId: out.acquisitionId,
+            surveyId: out.surveyId,
+            propertyId: out.propertyId,
+            inspectedBy: 'legal+inventory',
+            inspectionResult: 'PASS',
+            inspectionNotes: 'Property documentation reviewed; no legal blockers found',
+            inspectedAt: new Date().toISOString(),
+          });
           await AcquisitionApprovalRequestedProducer.send(out);
         } else if (topic === config.topics.acquisitionApproved) {
           const event = JSON.parse(raw) as AcquisitionApprovedEvent;

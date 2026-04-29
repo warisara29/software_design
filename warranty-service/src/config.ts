@@ -14,5 +14,7 @@ export const config = {
     warrantyRegistered: 'warranty.coverage.registered-topic',
     defectReported: 'warranty.defect.reported-topic',
     warrantyVerified: 'warranty.coverage.verified-topic',
+    // Flow 4 event 5 — Post-sale ปิด defect case แล้ว Legal subscribe เพื่อ archive ในระบบ
+    caseClosed: 'case.closed-topic',
   },
 };

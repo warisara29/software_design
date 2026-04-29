@@ -15,5 +15,7 @@ export const config = {
     acquisitionApprovalRequested: 'acquisition.approval.requested-topic',
     acquisitionApproved: 'acquisition.approval.granted-topic',
     acquisitionContractDrafted: 'acquisition.contract.drafted-topic',
+    // Flow 1 event 2 — Legal+Inventory ตรวจสอบ property เสร็จ → CEO subscribe
+    propertyInspected: 'property.inspected-topic',
   },
 };
