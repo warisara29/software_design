@@ -1,0 +1,90 @@
+# Render Blueprint — deploy 3 Legal microservices as Web Services
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Setup:
+#   1. Connect this repo to Render
+#   2. Create environment variables in each service's dashboard:
+#      - DATABASE_URL          (Supabase pooler connection string, port 6543)
+#      - KAFKA_BOOTSTRAP_SERVERS  (Confluent Cloud bootstrap)
+#      - KAFKA_API_KEY
+#      - KAFKA_API_SECRET
+#   3. Set up UptimeRobot to ping /health every 5 min (free tier sleeps after 15m idle)
+
+services:
+  - type: web
+    name: contract-service
+    runtime: node
+    rootDir: contract-service
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_SSL
+        value: "true"
+      - key: KAFKA_SECURITY_PROTOCOL
+        value: SASL_SSL
+      - key: DATABASE_URL
+        sync: false
+      - key: KAFKA_BOOTSTRAP_SERVERS
+        sync: false
+      - key: KAFKA_API_KEY
+        sync: false
+      - key: KAFKA_API_SECRET
+        sync: false
+
+  - type: web
+    name: acquisition-service
+    runtime: node
+    rootDir: acquisition-service
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_SSL
+        value: "true"
+      - key: KAFKA_SECURITY_PROTOCOL
+        value: SASL_SSL
+      - key: DATABASE_URL
+        sync: false
+      - key: KAFKA_BOOTSTRAP_SERVERS
+        sync: false
+      - key: KAFKA_API_KEY
+        sync: false
+      - key: KAFKA_API_SECRET
+        sync: false
+
+  - type: web
+    name: warranty-service
+    runtime: node
+    rootDir: warranty-service
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_SSL
+        value: "true"
+      - key: KAFKA_SECURITY_PROTOCOL
+        value: SASL_SSL
+      - key: DATABASE_URL
+        sync: false
+      - key: KAFKA_BOOTSTRAP_SERVERS
+        sync: false
+      - key: KAFKA_API_KEY
+        sync: false
+      - key: KAFKA_API_SECRET
+        sync: false
