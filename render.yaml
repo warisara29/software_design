@@ -16,7 +16,7 @@ services:
     runtime: node
     rootDir: contract-service
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: node dist/index.js
     healthCheckPath: /health
     envVars:
@@ -42,7 +42,7 @@ services:
     runtime: node
     rootDir: acquisition-service
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: node dist/index.js
     healthCheckPath: /health
     envVars:
@@ -68,7 +68,7 @@ services:
     runtime: node
     rootDir: warranty-service
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: node dist/index.js
     healthCheckPath: /health
     envVars:
