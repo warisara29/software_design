@@ -27,10 +27,18 @@ async function main(): Promise<void> {
   console.log(`[Boot] Starting ${config.serviceName} on port ${config.port}`);
 
   await initSchema();
-  await ensureTopics();
-  await producer.connect();
-  await consumer.connect();
-  await startBookingConfirmedConsumer();
+
+  try {
+    await ensureTopics();
+    await producer.connect();
+    await consumer.connect();
+    // Background — don't block boot if topics don't exist yet
+    startBookingConfirmedConsumer().catch((err) =>
+      console.warn('[Kafka] Consumer crashed:', (err as Error).message),
+    );
+  } catch (err) {
+    console.warn('[Kafka] Setup failed — REST API still works:', (err as Error).message);
+  }
 
   const app = express();
   app.use(express.json());

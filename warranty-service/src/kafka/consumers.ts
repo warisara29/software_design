@@ -8,8 +8,16 @@ import {
 import { WarrantyVerifiedProducer } from './producers.js';
 
 export async function startConsumers(): Promise<void> {
-  await consumer.subscribe({ topic: config.topics.warrantyRegistered, fromBeginning: false });
-  await consumer.subscribe({ topic: config.topics.defectReported, fromBeginning: false });
+  try {
+    await consumer.subscribe({ topic: config.topics.warrantyRegistered, fromBeginning: false });
+    await consumer.subscribe({ topic: config.topics.defectReported, fromBeginning: false });
+  } catch (err) {
+    console.warn(
+      `[Kafka] Consumer subscription failed — topics may not exist yet. Service keeps running, REST API works. Create topics + redeploy for Kafka flow.`,
+      (err as Error).message,
+    );
+    return;
+  }
 
   await consumer.run({
     eachMessage: async ({ topic, message }) => {
