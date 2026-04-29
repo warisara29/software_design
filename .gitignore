@@ -1,7 +1,8 @@
 .env
 .env.local
 
-# Java archive
+# Java archive (preserved locally only)
+_java-archive/
 target/
 *.class
 *.iml
