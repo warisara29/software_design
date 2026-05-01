@@ -6,7 +6,7 @@ import { producer } from '../kafka/client.js';
 export const testRouter = Router();
 
 /**
- * Simulator: publish booking.order.confirmed-topic
+ * Simulator: publish booking.order.confirmed
  */
 testRouter.post('/api/test/booking-confirmed', async (req, res) => {
   const bookingId = req.body?.bookingId ?? uuidv4();

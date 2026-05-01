@@ -13,7 +13,7 @@ import {
 export const inboundRouter = Router();
 
 /**
- * REST fallback for booking.order.confirmed-topic.
+ * REST fallback for booking.order.confirmed.
  * Lets Sales (or any team) trigger the contract draft flow without Kafka,
  * useful while topics aren't yet provisioned in the central cluster.
  *

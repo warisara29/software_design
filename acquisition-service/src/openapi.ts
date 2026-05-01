@@ -126,7 +126,7 @@ export const openapiSpec = {
     '/api/inbound/property-surveyed': {
       post: {
         tags: ['Inbound (REST fallback)'],
-        summary: 'Receive property survey (REST fallback for property.survey.received-topic)',
+        summary: 'Receive property survey (REST fallback for property.survey.received)',
         requestBody: {
           required: true,
           content: { 'application/json': { schema: { $ref: '#/components/schemas/PropertySurveyedEvent' } } },
@@ -137,7 +137,7 @@ export const openapiSpec = {
     '/api/inbound/acquisition-approved': {
       post: {
         tags: ['Inbound (REST fallback)'],
-        summary: 'CEO grants approval (REST fallback for acquisition.approval.granted-topic)',
+        summary: 'CEO grants approval (REST fallback for acquisition.approval.granted)',
         requestBody: {
           required: true,
           content: { 'application/json': { schema: { $ref: '#/components/schemas/AcquisitionApprovedEvent' } } },
@@ -148,14 +148,14 @@ export const openapiSpec = {
     '/api/test/property-surveyed': {
       post: {
         tags: ['Test (Kafka simulator)'],
-        summary: 'Publish property.survey.received-topic to Kafka',
+        summary: 'Publish property.survey.received to Kafka',
         responses: { 200: { description: 'Event sent' } },
       },
     },
     '/api/test/acquisition-approved': {
       post: {
         tags: ['Test (Kafka simulator)'],
-        summary: 'Publish acquisition.approval.granted-topic to Kafka',
+        summary: 'Publish acquisition.approval.granted to Kafka',
         requestBody: {
           required: true,
           content: { 'application/json': { schema: { $ref: '#/components/schemas/AcquisitionApprovedEvent' } } },

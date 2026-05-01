@@ -4,9 +4,9 @@
 
 | # | Service | Flow | Port | DB Schema | Consume | Produce |
 |---|---------|------|------|----|---------|---------|
-| 1 | `contract-service` | Flow 2 (Selling) | 8081 | `contract` | `booking.order.confirmed-topic` | `contract.draft.created-topic` |
-| 2 | `acquisition-service` | Flow 1 (Acquire) | 8082 | `acquisition` | `property.survey.received-topic`, `acquisition.approval.granted-topic` | `acquisition.approval.requested-topic`, `acquisition.contract.drafted-topic` |
-| 3 | `warranty-service` | Flow 4 (Defect) | 8083 | `warranty` | `warranty.coverage.registered-topic`, `warranty.defect.reported-topic` | `warranty.coverage.verified-topic` |
+| 1 | `contract-service` | Flow 2 (Selling) | 8081 | `contract` | `booking.order.confirmed` | `contract.draft.created` |
+| 2 | `acquisition-service` | Flow 1 (Acquire) | 8082 | `acquisition` | `property.survey.received`, `acquisition.approval.granted` | `acquisition.approval.requested`, `acquisition.contract.drafted` |
+| 3 | `warranty-service` | Flow 4 (Defect) | 8083 | `warranty` | `warranty.coverage.registered`, `warranty.defect.reported` | `warranty.coverage.verified` |
 
 > Topic naming: `[domain].[datatype].[action]-topic` — DDD: Aggregate Root + Entity + Value Object + Domain Event
 
@@ -64,15 +64,15 @@ docker-compose up --build
 
 1. สร้าง 9 topics:
    ```
-   booking.order.confirmed-topic
-   contract.draft.created-topic
-   property.survey.received-topic
-   acquisition.approval.requested-topic
-   acquisition.approval.granted-topic
-   acquisition.contract.drafted-topic
-   warranty.coverage.registered-topic
-   warranty.defect.reported-topic
-   warranty.coverage.verified-topic
+   booking.order.confirmed
+   contract.draft.created
+   property.survey.received
+   acquisition.approval.requested
+   acquisition.approval.granted
+   acquisition.contract.drafted
+   warranty.coverage.registered
+   warranty.defect.reported
+   warranty.coverage.verified
    ```
 2. สร้าง API Key + Secret
 
@@ -170,19 +170,19 @@ curl http://localhost:8083/health
 
 ```
 Flow 1: Acquire Property
-  Inventory ──property.survey.received-topic──► [Acquisition Svc]
-                                              ──acquisition.approval.requested-topic──► CEO
-  CEO ──acquisition.approval.granted-topic──► [Acquisition Svc]
-                                            ──acquisition.contract.drafted-topic──► Inventory
+  Inventory ──property.survey.received──► [Acquisition Svc]
+                                              ──acquisition.approval.requested──► CEO
+  CEO ──acquisition.approval.granted──► [Acquisition Svc]
+                                            ──acquisition.contract.drafted──► Inventory
 
 Flow 2: Selling Property
-  Sales ──booking.order.confirmed-topic──► [Contract Svc]
-                                         ──contract.draft.created-topic──► Property Verification
+  Sales ──booking.order.confirmed──► [Contract Svc]
+                                         ──contract.draft.created──► Property Verification
 
 Flow 4: Defect Report
-  Post-sale ──warranty.coverage.registered-topic──► [Warranty Svc]
-  Post-sale ──warranty.defect.reported-topic──► [Warranty Svc]
-                                              ──warranty.coverage.verified-topic──► Post-sale
+  Post-sale ──warranty.coverage.registered──► [Warranty Svc]
+  Post-sale ──warranty.defect.reported──► [Warranty Svc]
+                                              ──warranty.coverage.verified──► Post-sale
 ```
 
 ---

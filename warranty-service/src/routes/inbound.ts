@@ -9,7 +9,7 @@ import { WarrantyVerifiedProducer } from '../kafka/producers.js';
 export const inboundRouter = Router();
 
 /**
- * REST fallback for warranty.coverage.registered-topic.
+ * REST fallback for warranty.coverage.registered.
  *
  *   POST /api/inbound/warranty-registered
  *   Body: WarrantyRegisteredEvent
@@ -44,12 +44,12 @@ inboundRouter.post('/api/inbound/warranty-registered', async (req, res) => {
 });
 
 /**
- * REST fallback for warranty.defect.reported-topic.
+ * REST fallback for warranty.defect.reported.
  *
  *   POST /api/inbound/defect-reported
  *   Body: DefectReportedEvent
  *
- * Persists claim + best-effort publishes warranty.coverage.verified-topic.
+ * Persists claim + best-effort publishes warranty.coverage.verified.
  */
 inboundRouter.post('/api/inbound/defect-reported', async (req, res) => {
   const event = req.body as Partial<DefectReportedEvent>;

@@ -11,10 +11,10 @@ export const config = {
     saslPassword: process.env.KAFKA_API_SECRET,
   },
   topics: {
-    warrantyRegistered: 'warranty.coverage.registered-topic',
-    defectReported: 'warranty.defect.reported-topic',
-    warrantyVerified: 'warranty.coverage.verified-topic',
+    warrantyRegistered: 'warranty.coverage.registered',
+    defectReported: 'warranty.defect.reported',
+    warrantyVerified: 'warranty.coverage.verified',
     // Flow 4 event 5 — Post-sale ปิด defect case แล้ว Legal subscribe เพื่อ archive ในระบบ
-    caseClosed: 'case.closed-topic',
+    caseClosed: 'case.closed',
   },
 };

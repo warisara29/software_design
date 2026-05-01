@@ -112,7 +112,7 @@ export const openapiSpec = {
     '/api/inbound/booking-confirmed': {
       post: {
         tags: ['Inbound (REST fallback)'],
-        summary: 'Trigger contract draft (REST fallback for booking.order.confirmed-topic)',
+        summary: 'Trigger contract draft (REST fallback for booking.order.confirmed)',
         description:
           'Use this when Kafka topics are not yet provisioned. Same payload schema as the Kafka event. Persists contract to DB and best-effort publishes downstream events.',
         requestBody: {
@@ -142,7 +142,7 @@ export const openapiSpec = {
     '/api/test/booking-confirmed': {
       post: {
         tags: ['Test (Kafka simulator)'],
-        summary: 'Publish booking.order.confirmed-topic to Kafka',
+        summary: 'Publish booking.order.confirmed to Kafka',
         description: 'Requires the topic to exist on the central cluster. Use /api/inbound/booking-confirmed if topics are not ready yet.',
         requestBody: {
           required: false,
@@ -164,7 +164,7 @@ export const openapiSpec = {
     '/api/debug/kafka-ping': {
       post: {
         tags: ['Debug'],
-        summary: 'Smoke test Kafka connectivity (publishes to project.release.create-topic)',
+        summary: 'Smoke test Kafka connectivity (publishes to project.release.create)',
         responses: {
           200: { description: 'Auth + network OK' },
           500: { description: 'Kafka publish failed' },

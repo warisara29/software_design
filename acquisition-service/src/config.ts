@@ -11,11 +11,11 @@ export const config = {
     saslPassword: process.env.KAFKA_API_SECRET,
   },
   topics: {
-    propertySurveyed: 'property.survey.received-topic',
-    acquisitionApprovalRequested: 'acquisition.approval.requested-topic',
-    acquisitionApproved: 'acquisition.approval.granted-topic',
-    acquisitionContractDrafted: 'acquisition.contract.drafted-topic',
+    propertySurveyed: 'property.survey.received',
+    acquisitionApprovalRequested: 'acquisition.approval.requested',
+    acquisitionApproved: 'acquisition.approval.granted',
+    acquisitionContractDrafted: 'acquisition.contract.drafted',
     // Flow 1 event 2 — Legal+Inventory ตรวจสอบ property เสร็จ → CEO subscribe
-    propertyInspected: 'property.inspected-topic',
+    propertyInspected: 'property.inspected',
   },
 };

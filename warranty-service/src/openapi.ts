@@ -118,7 +118,7 @@ export const openapiSpec = {
     '/api/inbound/warranty-registered': {
       post: {
         tags: ['Inbound (REST fallback)'],
-        summary: 'Register warranty (REST fallback for warranty.coverage.registered-topic)',
+        summary: 'Register warranty (REST fallback for warranty.coverage.registered)',
         requestBody: {
           required: true,
           content: { 'application/json': { schema: { $ref: '#/components/schemas/WarrantyRegisteredEvent' } } },
@@ -129,7 +129,7 @@ export const openapiSpec = {
     '/api/inbound/defect-reported': {
       post: {
         tags: ['Inbound (REST fallback)'],
-        summary: 'Report defect (REST fallback for warranty.defect.reported-topic)',
+        summary: 'Report defect (REST fallback for warranty.defect.reported)',
         requestBody: {
           required: true,
           content: { 'application/json': { schema: { $ref: '#/components/schemas/DefectReportedEvent' } } },
@@ -140,14 +140,14 @@ export const openapiSpec = {
     '/api/test/warranty-registered': {
       post: {
         tags: ['Test (Kafka simulator)'],
-        summary: 'Publish warranty.coverage.registered-topic to Kafka',
+        summary: 'Publish warranty.coverage.registered to Kafka',
         responses: { 200: { description: 'Event sent' } },
       },
     },
     '/api/test/defect-reported': {
       post: {
         tags: ['Test (Kafka simulator)'],
-        summary: 'Publish warranty.defect.reported-topic to Kafka',
+        summary: 'Publish warranty.defect.reported to Kafka',
         responses: { 200: { description: 'Event sent' } },
       },
     },

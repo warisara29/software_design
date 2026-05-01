@@ -13,13 +13,13 @@ import {
 export const inboundRouter = Router();
 
 /**
- * REST fallback for property.survey.received-topic.
+ * REST fallback for property.survey.received.
  *
  *   POST /api/inbound/property-surveyed
  *   Body: PropertySurveyedEvent
  *
  * Calls AcquisitionService.receiveSurvey() then best-effort publishes
- * property.inspected-topic + acquisition.approval.requested-topic.
+ * property.inspected + acquisition.approval.requested.
  */
 inboundRouter.post('/api/inbound/property-surveyed', async (req, res) => {
   const event = req.body as Partial<PropertySurveyedEvent>;
@@ -71,7 +71,7 @@ inboundRouter.post('/api/inbound/property-surveyed', async (req, res) => {
 });
 
 /**
- * REST fallback for acquisition.approval.granted-topic.
+ * REST fallback for acquisition.approval.granted.
  *
  *   POST /api/inbound/acquisition-approved
  *   Body: { acquisitionId: UUID, approvedPrice?: number, approvedBy?: string }
