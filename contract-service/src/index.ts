@@ -1,27 +1,11 @@
 import express from 'express';
 import { config } from './config.js';
 import { initSchema } from './db.js';
-import { consumer, kafka, producer } from './kafka/client.js';
+import { consumer, producer } from './kafka/client.js';
 import { startBookingConfirmedConsumer } from './kafka/BookingConfirmedConsumer.js';
 import { testRouter } from './routes/test.js';
 import { queryRouter } from './routes/query.js';
-
-async function ensureTopics(): Promise<void> {
-  const admin = kafka.admin();
-  try {
-    await admin.connect();
-    const topics = Object.values(config.topics);
-    await admin.createTopics({
-      topics: topics.map((topic) => ({ topic, numPartitions: 1, replicationFactor: 1 })),
-      waitForLeaders: false,
-    });
-    console.log(`[Admin] Topics ensured: ${topics.join(', ')}`);
-  } catch (err) {
-    console.warn(`[Admin] Topic ensure skipped:`, (err as Error).message);
-  } finally {
-    await admin.disconnect();
-  }
-}
+import { debugRouter } from './routes/debug.js';
 
 async function main(): Promise<void> {
   console.log(`[Boot] Starting ${config.serviceName} on port ${config.port}`);
@@ -29,7 +13,8 @@ async function main(): Promise<void> {
   await initSchema();
 
   try {
-    await ensureTopics();
+    // ensureTopics() ปิดไว้ — cluster กลางไม่อนุญาต auto-create
+    // ต้องสร้าง topics ผ่าน Confluent UI / admin โดยตรง
     await producer.connect();
     await consumer.connect();
     // Background — don't block boot if topics don't exist yet
@@ -44,6 +29,7 @@ async function main(): Promise<void> {
   app.use(express.json());
   app.use(testRouter);
   app.use(queryRouter);
+  app.use(debugRouter);
   app.get('/health', (_req, res) => res.json({ status: 'UP', service: config.serviceName }));
 
   app.listen(config.port, () => {
