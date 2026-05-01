@@ -6,6 +6,7 @@ import { startBookingConfirmedConsumer } from './kafka/BookingConfirmedConsumer.
 import { testRouter } from './routes/test.js';
 import { queryRouter } from './routes/query.js';
 import { debugRouter } from './routes/debug.js';
+import { inboundRouter } from './routes/inbound.js';
 
 async function main(): Promise<void> {
   console.log(`[Boot] Starting ${config.serviceName} on port ${config.port}`);
@@ -30,6 +31,7 @@ async function main(): Promise<void> {
   app.use(testRouter);
   app.use(queryRouter);
   app.use(debugRouter);
+  app.use(inboundRouter);
   app.get('/health', (_req, res) => res.json({ status: 'UP', service: config.serviceName }));
 
   app.listen(config.port, () => {
