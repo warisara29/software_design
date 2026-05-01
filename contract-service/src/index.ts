@@ -1,6 +1,8 @@
 import express from 'express';
+import swaggerUi from 'swagger-ui-express';
 import { config } from './config.js';
 import { initSchema } from './db.js';
+import { openapiSpec } from './openapi.js';
 import { consumer, producer } from './kafka/client.js';
 import { startBookingConfirmedConsumer } from './kafka/BookingConfirmedConsumer.js';
 import { testRouter } from './routes/test.js';
@@ -32,6 +34,9 @@ async function main(): Promise<void> {
   app.use(queryRouter);
   app.use(debugRouter);
   app.use(inboundRouter);
+  app.get('/openapi.json', (_req, res) => res.json(openapiSpec));
+  app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
+  app.get('/', (_req, res) => res.redirect('/docs'));
   app.get('/health', (_req, res) => res.json({ status: 'UP', service: config.serviceName }));
 
   app.listen(config.port, () => {
