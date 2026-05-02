@@ -8,7 +8,6 @@ import {
   PropertyLeaseInspectedProducer,
 } from './ContractDraftCreatedProducer.js';
 import {
-  isKycApproved,
   isReadyForPurchaseContract,
   isSaleBookedCompleteEvent,
   mapSaleBookedToBookingConfirmed,
@@ -35,16 +34,9 @@ export async function startBookingConfirmedConsumer(): Promise<void> {
           const parsed = JSON.parse(raw);
           const isSales = isSaleBookedCompleteEvent(parsed);
 
-          // Flow 2 gate — only draft willing contract when Sales says KYC has approved
-          if (isSales) {
-            const sales = parsed as SaleBookedCompleteEvent;
-            if (!isKycApproved(sales)) {
-              console.log(
-                `[Flow 2] ⏸ skipped — statusKyc=${sales.statusKyc} (need APPROVED to draft willing contract)`,
-              );
-              return;
-            }
-          }
+          // Flow 2: Booking → Legal drafts willing contract immediately (KYC happens
+          // after, by CEO. Then Legal inspects property + lease.)
+          // No KYC gate at this step — willing contract is drafted on booking.
 
           // Sales' Kafka schema vs our REST inbound schema — accept both
           const event: BookingConfirmedEvent = isSales
@@ -52,7 +44,7 @@ export async function startBookingConfirmedConsumer(): Promise<void> {
             : (parsed as BookingConfirmedEvent);
           const draftCreated = await ContractDraftService.createContractDraft(event);
 
-          // Flow 2 event 6 — willing-to-buy contract drafted (preliminary, after KYC pass)
+          // Flow 2 event 6 — willing-to-buy contract drafted (right after booking)
           await WillingContractDraftedProducer.send({
             willingContractId: uuidv4(),
             contractId: draftCreated.contractId,
@@ -63,7 +55,7 @@ export async function startBookingConfirmedConsumer(): Promise<void> {
             draftedAt: draftCreated.draftedAt,
           });
           console.log(
-            `[Flow 2] ✅ DONE publish willing.contract.drafted (KYC passed) — contractId=${draftCreated.contractId}`,
+            `[Flow 2] ✅ DONE publish willing.contract.drafted — contractId=${draftCreated.contractId}`,
           );
 
           // Flow 2 event 8 — property + lease inspected
