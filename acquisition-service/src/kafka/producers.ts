@@ -6,6 +6,10 @@ import type {
 } from '../service/AcquisitionService.js';
 import type { PropertyInspectedEvent } from '../event/PropertyInspectedEvent.js';
 
+function logProducerSend(topic: string, event: unknown): void {
+  console.log(`[Producer] → ${topic}: ${JSON.stringify(event)}`);
+}
+
 export const AcquisitionApprovalRequestedProducer = {
   async send(event: AcquisitionApprovalRequestedEvent): Promise<void> {
     const topic = config.topics.acquisitionApprovalRequested;
@@ -13,7 +17,7 @@ export const AcquisitionApprovalRequestedProducer = {
       topic,
       messages: [{ key: event.acquisitionId, value: JSON.stringify(event) }],
     });
-    console.log(`[Producer] → ${topic}: acquisitionId=${event.acquisitionId}`);
+    logProducerSend(topic, event);
   },
 };
 
@@ -24,9 +28,7 @@ export const AcquisitionContractDraftedProducer = {
       topic,
       messages: [{ key: event.acquisitionId, value: JSON.stringify(event) }],
     });
-    console.log(
-      `[Producer] → ${topic}: acquisitionId=${event.acquisitionId}, willingContractId=${event.willingContractId}`,
-    );
+    logProducerSend(topic, event);
   },
 };
 
@@ -37,8 +39,6 @@ export const PropertyInspectedProducer = {
       topic,
       messages: [{ key: event.acquisitionId, value: JSON.stringify(event) }],
     });
-    console.log(
-      `[Producer] → ${topic}: acquisitionId=${event.acquisitionId}, result=${event.inspectionResult}`,
-    );
+    logProducerSend(topic, event);
   },
 };

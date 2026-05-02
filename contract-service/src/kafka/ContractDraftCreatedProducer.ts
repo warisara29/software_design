@@ -4,6 +4,10 @@ import type { ContractDraftCreatedEvent } from '../service/ContractDraftService.
 import type { WillingContractDraftedEvent } from '../event/WillingContractDraftedEvent.js';
 import type { PropertyLeaseInspectedEvent } from '../event/PropertyLeaseInspectedEvent.js';
 
+function logProducerSend(topic: string, event: unknown): void {
+  console.log(`[Producer] → ${topic}: ${JSON.stringify(event)}`);
+}
+
 /**
  * Flow 2 event 9 — purchase contract drafted (สัญญาซื้อขายจริง)
  * Subscribers: Payment, Post-sales
@@ -15,7 +19,7 @@ export const PurchaseContractDraftedProducer = {
       topic,
       messages: [{ key: event.contractId, value: JSON.stringify(event) }],
     });
-    console.log(`[Producer] → ${topic}: contractId=${event.contractId}`);
+    logProducerSend(topic, event);
   },
 };
 
@@ -29,7 +33,7 @@ export const WillingContractDraftedProducer = {
       topic,
       messages: [{ key: event.contractId, value: JSON.stringify(event) }],
     });
-    console.log(`[Producer] → ${topic}: contractId=${event.contractId}, willingContractId=${event.willingContractId}`);
+    logProducerSend(topic, event);
   },
 };
 
@@ -43,7 +47,7 @@ export const PropertyLeaseInspectedProducer = {
       topic,
       messages: [{ key: event.contractId, value: JSON.stringify(event) }],
     });
-    console.log(`[Producer] → ${topic}: contractId=${event.contractId}, result=${event.inspectionResult}`);
+    logProducerSend(topic, event);
   },
 };
 

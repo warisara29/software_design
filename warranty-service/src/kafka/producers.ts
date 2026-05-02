@@ -9,6 +9,6 @@ export const WarrantyVerifiedProducer = {
       topic,
       messages: [{ key: event.claimId, value: JSON.stringify(event) }],
     });
-    console.log(`[Producer] → ${topic}: claimId=${event.claimId}, status=${event.coverageStatus}`);
+    console.log(`[Producer] → ${topic}: ${JSON.stringify(event)}`);
   },
 };
