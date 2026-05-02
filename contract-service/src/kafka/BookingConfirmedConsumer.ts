@@ -12,32 +12,23 @@ import {
   mapSaleBookedToBookingConfirmed,
   type SaleBookedCompleteEvent,
 } from '../event/SaleBookedCompleteEvent.js';
-import {
-  isCeoKycCompletedEvent,
-  isKycApproved,
-  type CeoKycCompletedEvent,
-} from '../event/CeoKycCompletedEvent.js';
-import { ContractRepository } from '../repository/ContractRepository.js';
-import { coerceToUuid } from '../util/idCoerce.js';
 
 const BOOKING_TOPIC = config.topics.bookingConfirmed;
-const KYC_TOPIC = config.topics.ceoKycCompleted;
 
 /**
- * Flow 2 — Selling Property
+ * Flow 2 — Selling Property (KYC bypass mode)
  *
- * 1. sale.booked.complete (Sales)
- *    → Legal drafts willing contract (publishes willing.contract.drafted)
- *    → If status=SOLD also publishes contract.drafted (final purchase contract)
+ * sale.booked.complete (Sales) →
+ *   1. Legal drafts willing contract       → publish willing.contract.drafted
+ *   2. Legal inspects property + lease     → publish property.lease.inspected
+ *   3. Legal drafts purchase contract      → publish contract.drafted
  *
- * 2. ceo.kyc.completed (CEO)
- *    → If KYC approved → Legal inspects property + lease
- *      (publishes property.lease.inspected)
+ * KYC step (ceo.kyc.completed) is intentionally bypassed — Legal proceeds
+ * immediately after booking, all 3 events fire from a single consumer run.
  */
 export async function startBookingConfirmedConsumer(): Promise<void> {
   try {
     await consumer.subscribe({ topic: BOOKING_TOPIC, fromBeginning: false });
-    await consumer.subscribe({ topic: KYC_TOPIC, fromBeginning: false });
   } catch (err) {
     console.warn(
       `[Kafka] Consumer subscription failed — topics may not exist yet. Service keeps running, REST API works.`,
@@ -53,8 +44,6 @@ export async function startBookingConfirmedConsumer(): Promise<void> {
       try {
         if (topic === BOOKING_TOPIC) {
           await handleBookingConfirmed(raw);
-        } else if (topic === KYC_TOPIC) {
-          await handleKycCompleted(raw);
         }
       } catch (err) {
         console.error(`[Consumer] failed to process ${topic}:`, err);
@@ -67,9 +56,6 @@ async function handleBookingConfirmed(raw: string): Promise<void> {
   const parsed = JSON.parse(raw);
   const isSales = isSaleBookedCompleteEvent(parsed);
 
-  // Booking → Legal drafts willing contract immediately.
-  // (KYC happens later, by CEO. After KYC, Legal publishes property.lease.inspected
-  //  and contract.drafted — see handleKycCompleted below.)
   const event: BookingConfirmedEvent = isSales
     ? mapSaleBookedToBookingConfirmed(parsed as SaleBookedCompleteEvent)
     : (parsed as BookingConfirmedEvent);
@@ -89,55 +75,14 @@ async function handleBookingConfirmed(raw: string): Promise<void> {
     `[Flow 2] ✅ DONE publish willing.contract.drafted — contractId=${draftCreated.contractId}`,
   );
 
-  console.log(
-    `[Flow 2] ⏸ property.lease.inspected + contract.drafted รอ ceo.kyc.completed จาก CEO ก่อน`,
-  );
-}
-
-async function handleKycCompleted(raw: string): Promise<void> {
-  const parsed = JSON.parse(raw);
-
-  if (!isCeoKycCompletedEvent(parsed)) {
-    console.warn(`[Flow 2] ceo.kyc.completed schema not recognized — skipped`);
-    return;
-  }
-  const kyc = parsed as CeoKycCompletedEvent;
-
-  if (!isKycApproved(kyc)) {
-    console.log(
-      `[Flow 2] ⏸ KYC not approved (status=${kyc.kycStatus ?? kyc.status ?? kyc.result}) — skipping property+lease inspection`,
-    );
-    return;
-  }
-
-  // Find the contract this KYC refers to
-  let contract = null;
-  if (kyc.contractId) {
-    const contractUuid = coerceToUuid(kyc.contractId);
-    contract = await ContractRepository.findById(contractUuid);
-  }
-  if (!contract && kyc.customerId) {
-    const customerUuid = coerceToUuid(kyc.customerId);
-    const list = await ContractRepository.findByCustomerId(customerUuid);
-    contract = list.length > 0 ? list[list.length - 1] : null; // latest
-  }
-
-  if (!contract) {
-    console.warn(
-      `[Flow 2] ⚠️ KYC approved but no matching contract found — contractId=${kyc.contractId}, customerId=${kyc.customerId}`,
-    );
-    return;
-  }
-
-  console.log(
-    `[Flow 2] ✅ KYC approved — proceeding with property+lease inspection for contractId=${contract.contractId}`,
-  );
+  // KYC bypass — proceed immediately with property+lease inspection
+  // (CEO KYC step skipped; Legal continues straight to next stages)
 
   // Flow 2 event 8 — property + lease inspected
   await PropertyLeaseInspectedProducer.send({
     inspectionId: uuidv4(),
-    contractId: contract.contractId,
-    unitId: contract.unitId,
+    contractId: draftCreated.contractId,
+    unitId: draftCreated.unitId,
     hasOutstandingLease: false,
     hasEncumbrance: false,
     inspectionResult: 'PASS',
@@ -145,25 +90,22 @@ async function handleKycCompleted(raw: string): Promise<void> {
     inspectedAt: new Date().toISOString(),
   });
   console.log(
-    `[Flow 2] ✅ DONE publish property.lease.inspected — contractId=${contract.contractId}`,
+    `[Flow 2] ✅ DONE publish property.lease.inspected — contractId=${draftCreated.contractId}`,
   );
 
   // Flow 2 event 9 — purchase contract drafted (สัญญาขายจริง)
-  // Per the flow diagram, Legal drafts the purchase contract immediately
-  // after lease inspection — Payment then collects second payment which
-  // updates the property status to "Sold".
   await PurchaseContractDraftedProducer.send({
-    contractId: contract.contractId,
-    bookingId: contract.bookingId,
-    unitId: contract.unitId,
-    customerId: contract.customerId,
-    status: contract.status,
-    fileUrl: contract.contractDraft?.fileUrl ?? '',
-    templateId: contract.templateId,
-    createdAt: contract.createdAt,
-    draftedAt: contract.contractDraft?.draftedAt ?? new Date().toISOString(),
+    contractId: draftCreated.contractId,
+    bookingId: draftCreated.bookingId,
+    unitId: draftCreated.unitId,
+    customerId: draftCreated.customerId,
+    status: draftCreated.status,
+    fileUrl: draftCreated.fileUrl,
+    templateId: draftCreated.templateId,
+    createdAt: draftCreated.createdAt,
+    draftedAt: draftCreated.draftedAt,
   });
   console.log(
-    `[Flow 2] ✅ DONE publish contract.drafted (purchase contract) — contractId=${contract.contractId}`,
+    `[Flow 2] ✅ DONE publish contract.drafted (purchase contract) — contractId=${draftCreated.contractId}`,
   );
 }
