@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Contract } from '../domain/Contract.js';
 import { ContractParties } from '../domain/ContractParties.js';
 import { ContractRepository } from '../repository/ContractRepository.js';
+import { coerceToUuid } from '../util/idCoerce.js';
 
 export interface BookingConfirmedEvent {
   bookingId: string;
@@ -31,18 +32,23 @@ export const ContractDraftService = {
       `[Command] CreateContractDraft — bookingId=${event.bookingId}, unitId=${event.unitId}, customerId=${event.customerId}`,
     );
 
+    // Coerce string codes (e.g. "PROP-001") to deterministic UUIDs
+    const bookingId = coerceToUuid(event.bookingId);
+    const unitId = coerceToUuid(event.unitId);
+    const customerId = coerceToUuid(event.customerId);
+
     // VOs
     const sellerId = uuidv4();
-    const parties = new ContractParties(event.customerId, sellerId);
+    const parties = new ContractParties(customerId, sellerId);
 
     // Factory method (Aggregate Root)
     const templateId = uuidv4();
     const fileUrl = `https://storage.realestate.com/contracts/draft-${uuidv4()}.pdf`;
 
     const contract = Contract.createContractDraft({
-      bookingId: event.bookingId,
-      customerId: event.customerId,
-      unitId: event.unitId,
+      bookingId,
+      customerId,
+      unitId,
       templateId,
       parties,
       fileUrl,
