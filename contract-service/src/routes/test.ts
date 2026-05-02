@@ -28,6 +28,7 @@ testRouter.post('/api/test/booking-confirmed', async (req, res) => {
     'room number': req.body?.['room number'] ?? '12-01',
     StatusKYC: req.body?.StatusKYC ?? 'PASSED',
     PaymentSecondStatus: req.body?.PaymentSecondStatus ?? 'PENDING',
+    secondPayment: req.body?.secondPayment ?? 4_400_000,
   };
 
   await producer.send({

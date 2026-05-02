@@ -20,4 +20,5 @@ export interface WillingContractDraftedEvent {
   totalPrice?: number;
   statusKyc?: string;
   paymentSecondStatus?: string;
+  secondPayment?: number;
 }

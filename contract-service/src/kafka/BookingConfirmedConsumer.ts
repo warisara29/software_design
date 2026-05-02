@@ -80,6 +80,7 @@ async function handleBookingConfirmed(raw: string): Promise<void> {
     totalPrice: draftCreated.totalPrice,
     statusKyc: draftCreated.statusKyc,
     paymentSecondStatus: draftCreated.paymentSecondStatus,
+    secondPayment: draftCreated.secondPayment,
   });
   console.log(
     `[Flow 2] ✅ DONE publish willing.contract.drafted — contractId=${draftCreated.contractId}`,

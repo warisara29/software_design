@@ -30,6 +30,7 @@ export class Contract {
   totalPrice?: number;
   statusKyc?: string;
   paymentSecondStatus?: string;
+  secondPayment?: number;
 
   /**
    * Command: CreateContractDraft
@@ -51,6 +52,7 @@ export class Contract {
     totalPrice?: number;
     statusKyc?: string;
     paymentSecondStatus?: string;
+    secondPayment?: number;
   }): Contract {
     const c = new Contract();
     c.contractId = uuidv4();
@@ -70,6 +72,7 @@ export class Contract {
     c.totalPrice = input.totalPrice;
     c.statusKyc = input.statusKyc;
     c.paymentSecondStatus = input.paymentSecondStatus;
+    c.secondPayment = input.secondPayment;
     return c;
   }
 }

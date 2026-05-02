@@ -17,6 +17,7 @@ export interface BookingConfirmedEvent {
   pricePerUnit?: number;
   statusKyc?: string;
   paymentSecondStatus?: string;
+  secondPayment?: number;
 }
 
 export interface ContractDraftCreatedEvent {
@@ -38,6 +39,7 @@ export interface ContractDraftCreatedEvent {
   totalPrice?: number;
   statusKyc?: string;
   paymentSecondStatus?: string;
+  secondPayment?: number;
 }
 
 /**
@@ -78,6 +80,7 @@ export const ContractDraftService = {
       totalPrice: event.pricePerUnit,
       statusKyc: event.statusKyc,
       paymentSecondStatus: event.paymentSecondStatus,
+      secondPayment: event.secondPayment,
     });
     await ContractRepository.save(contract);
 
@@ -103,6 +106,7 @@ export const ContractDraftService = {
       totalPrice: contract.totalPrice,
       statusKyc: contract.statusKyc,
       paymentSecondStatus: contract.paymentSecondStatus,
+      secondPayment: contract.secondPayment,
     };
   },
 };

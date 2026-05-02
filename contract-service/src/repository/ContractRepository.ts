@@ -27,6 +27,7 @@ interface ContractRow {
   room_number: string | null;
   status_kyc: string | null;
   payment_second_status: string | null;
+  second_payment: string | null;
   // joined
   draft_file_url?: string | null;
   draft_template_id?: string | null;
@@ -71,6 +72,7 @@ function rowToContract(row: ContractRow): Contract {
   c.roomNumber = row.room_number ?? undefined;
   c.statusKyc = row.status_kyc ?? undefined;
   c.paymentSecondStatus = row.payment_second_status ?? undefined;
+  c.secondPayment = row.second_payment !== null ? Number(row.second_payment) : undefined;
   return c;
 }
 
@@ -94,9 +96,9 @@ export const ContractRepository = {
         `INSERT INTO contracts (contract_id, status, version, template_id, created_at,
                                 booking_id, customer_id, unit_id, buyer_id, seller_id, draft_id,
                                 total_price, project_name, location, area_unit, room_type,
-                                room_number, status_kyc, payment_second_status)
+                                room_number, status_kyc, payment_second_status, second_payment)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-                 $12, $13, $14, $15, $16, $17, $18, $19)
+                 $12, $13, $14, $15, $16, $17, $18, $19, $20)
          ON CONFLICT (contract_id) DO UPDATE SET
            status = EXCLUDED.status,
            version = EXCLUDED.version,
@@ -108,7 +110,8 @@ export const ContractRepository = {
            room_type = COALESCE(EXCLUDED.room_type, contracts.room_type),
            room_number = COALESCE(EXCLUDED.room_number, contracts.room_number),
            status_kyc = COALESCE(EXCLUDED.status_kyc, contracts.status_kyc),
-           payment_second_status = COALESCE(EXCLUDED.payment_second_status, contracts.payment_second_status)`,
+           payment_second_status = COALESCE(EXCLUDED.payment_second_status, contracts.payment_second_status),
+           second_payment = COALESCE(EXCLUDED.second_payment, contracts.second_payment)`,
         [
           c.contractId,
           c.status,
@@ -129,6 +132,7 @@ export const ContractRepository = {
           c.roomNumber ?? null,
           c.statusKyc ?? null,
           c.paymentSecondStatus ?? null,
+          c.secondPayment ?? null,
         ],
       );
     });

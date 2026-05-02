@@ -77,7 +77,8 @@ export async function initSchema(): Promise<void> {
       ADD COLUMN IF NOT EXISTS room_type              TEXT,
       ADD COLUMN IF NOT EXISTS room_number            TEXT,
       ADD COLUMN IF NOT EXISTS status_kyc             TEXT,
-      ADD COLUMN IF NOT EXISTS payment_second_status  TEXT;
+      ADD COLUMN IF NOT EXISTS payment_second_status  TEXT,
+      ADD COLUMN IF NOT EXISTS second_payment         NUMERIC;
   `);
 
   console.log(`[DB] Schema "${SCHEMA}" ready`);

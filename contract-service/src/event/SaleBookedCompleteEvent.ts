@@ -49,6 +49,7 @@ export interface SaleBookedCompleteEvent {
   statusKyc?: string;
   status?: string;
   paymentSecondStatus?: string;
+  secondPayment?: number;
   timestamp?: string;
 }
 
@@ -65,6 +66,7 @@ export interface BookingConfirmedEvent {
   pricePerUnit?: number;
   statusKyc?: string;
   paymentSecondStatus?: string;
+  secondPayment?: number;
 }
 
 const RE_NAMESPACE = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
@@ -104,6 +106,7 @@ export function normalizeSalesEvent(payload: unknown): SaleBookedCompleteEvent {
     statusKyc: pickString(p, 'statusKyc', 'StatusKYC', 'KYC'),
     status: pickString(p, 'status', 'Status'),
     paymentSecondStatus: pickString(p, 'paymentSecondStatus', 'PaymentSecondStatus'),
+    secondPayment: pickNumber(p, 'secondPayment', 'Second Payment', 'SecondPayment'),
     timestamp: pickString(p, 'timestamp', 'Timestamp'),
   };
 }
@@ -126,6 +129,7 @@ export function mapSaleBookedToBookingConfirmed(
     pricePerUnit: sales.pricePerUnit,
     statusKyc: sales.statusKyc,
     paymentSecondStatus: sales.paymentSecondStatus,
+    secondPayment: sales.secondPayment,
   };
 }
 
