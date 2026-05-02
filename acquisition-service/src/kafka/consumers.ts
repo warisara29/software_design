@@ -42,6 +42,7 @@ export async function startConsumers(): Promise<void> {
             sellerName: parsed.sellerName ?? parsed.SellerName ?? parsed['Seller Name'] ?? '',
             sellerContact: parsed.sellerContact ?? parsed.SellerContact ?? parsed['Seller Contact'] ?? '',
           };
+          
           const out = await AcquisitionService.receiveSurvey(event);
 
           // Flow 1 event 2 — Legal+Inventory ตรวจสอบ property แล้ว → CEO รับรู้

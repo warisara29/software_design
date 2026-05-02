@@ -31,13 +31,26 @@ export async function startBookingConfirmedConsumer(): Promise<void> {
         console.log(`[Consumer] ← ${topic}: ${raw}`);
         try {
           const parsed = JSON.parse(raw);
+          const isSales = isSaleBookedCompleteEvent(parsed);
+
+          // Flow 2 gate — only draft willing contract when Sales says KYC has passed
+          if (isSales) {
+            const sales = parsed as SaleBookedCompleteEvent;
+            if (sales.StatusKYC !== 'PASSED') {
+              console.log(
+                `[Flow 2] ⏸ skipped — StatusKYC=${sales.StatusKYC} (need PASSED to draft willing contract)`,
+              );
+              return;
+            }
+          }
+
           // Sales' Kafka schema vs our REST inbound schema — accept both
-          const event: BookingConfirmedEvent = isSaleBookedCompleteEvent(parsed)
+          const event: BookingConfirmedEvent = isSales
             ? mapSaleBookedToBookingConfirmed(parsed as SaleBookedCompleteEvent)
             : (parsed as BookingConfirmedEvent);
           const draftCreated = await ContractDraftService.createContractDraft(event);
 
-          // Flow 2 event 6 — willing-to-buy contract drafted
+          // Flow 2 event 6 — willing-to-buy contract drafted (preliminary, after KYC pass)
           await WillingContractDraftedProducer.send({
             willingContractId: uuidv4(),
             contractId: draftCreated.contractId,
@@ -47,6 +60,9 @@ export async function startBookingConfirmedConsumer(): Promise<void> {
             fileUrl: draftCreated.fileUrl,
             draftedAt: draftCreated.draftedAt,
           });
+          console.log(
+            `[Flow 2] ✅ DONE publish willing.contract.drafted (KYC passed) — contractId=${draftCreated.contractId}`,
+          );
 
           // Flow 2 event 8 — property + lease inspected
           await PropertyLeaseInspectedProducer.send({
@@ -59,11 +75,25 @@ export async function startBookingConfirmedConsumer(): Promise<void> {
             notes: 'Property title clean; no outstanding lease or encumbrance found',
             inspectedAt: new Date().toISOString(),
           });
+          console.log(
+            `[Flow 2] ✅ DONE publish property.lease.inspected — contractId=${draftCreated.contractId}`,
+          );
 
-          // Flow 2 event 9 — purchase contract drafted (สัญญาซื้อขายจริง)
+          // Flow 2 event 9 — purchase contract drafted (final), gated on second payment
+          if (isSales) {
+            const sales = parsed as SaleBookedCompleteEvent;
+            if (sales.PaymentSecondStatus !== 'CONFIRMED') {
+              console.log(
+                `[Flow 2] ⏸ purchase contract not drafted yet — PaymentSecondStatus=${sales.PaymentSecondStatus} (need CONFIRMED). Will draft when Sales sends another sale.booked.complete with PaymentSecondStatus=CONFIRMED.`,
+              );
+              return;
+            }
+          }
+
           await PurchaseContractDraftedProducer.send(draftCreated);
-
-          console.log(`[Flow 2] sale.booked.complete → willing → lease.inspected → contract.drafted for bookingId=${event.bookingId}`);
+          console.log(
+            `[Flow 2] ✅ DONE publish contract.drafted (PaymentSecondStatus CONFIRMED) — contractId=${draftCreated.contractId}`,
+          );
         } catch (err) {
           console.error(`[Consumer] failed to process ${topic}:`, err);
         }
