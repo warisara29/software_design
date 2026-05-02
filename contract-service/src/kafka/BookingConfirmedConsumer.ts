@@ -105,17 +105,8 @@ async function handleBookingConfirmed(raw: string): Promise<void> {
   );
 
   // Flow 2 event 9 — purchase contract drafted (สัญญาขายจริง)
-  await PurchaseContractDraftedProducer.send({
-    contractId: draftCreated.contractId,
-    bookingId: draftCreated.bookingId,
-    unitId: draftCreated.unitId,
-    customerId: draftCreated.customerId,
-    status: draftCreated.status,
-    fileUrl: draftCreated.fileUrl,
-    templateId: draftCreated.templateId,
-    createdAt: draftCreated.createdAt,
-    draftedAt: draftCreated.draftedAt,
-  });
+  // Pass through draftCreated as-is — includes all booking metadata captured from Sales
+  await PurchaseContractDraftedProducer.send(draftCreated);
   console.log(
     `[Flow 2] ✅ DONE publish contract.drafted (purchase contract) — contractId=${draftCreated.contractId}`,
   );
