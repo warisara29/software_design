@@ -18,6 +18,9 @@ export const config = {
     defectReported: 'warranty.defect.reported',
     warrantyVerified: 'warranty.coverage.verified',
     // Flow 4 event 5 — Post-sale ปิด defect case แล้ว Legal subscribe เพื่อ archive ในระบบ
-    caseClosed: 'case.closed',
+    // Topic name มาจาก Post-sale (DefectCaseClosed event) — primary
+    caseClosed: 'postsales.caseclosed.completed',
+    // Legacy topic name — เก็บไว้ subscribe ด้วย เผื่อ Post-sale ยังใช้อยู่
+    caseClosedLegacy: 'case.closed',
   },
 };
