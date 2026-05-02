@@ -14,13 +14,15 @@ export const config = {
     saslPassword: process.env.KAFKA_PASSWORD ?? process.env.KAFKA_API_SECRET,
   },
   topics: {
-    // Flow 2 trigger — Sales publishes when booking confirmed (was: booking.order.confirmed)
+    // Flow 2 trigger — Sales publishes when booking confirmed
     bookingConfirmed: 'sale.booked.complete',
     // Flow 2 event 6: Legal ร่างสัญญาจะซื้อจะขาย (preliminary willing-to-buy)
     willingContractDrafted: 'willing.contract.drafted',
+    // Flow 2 trigger — CEO publishes after KYC done (Legal then inspects property+lease)
+    ceoKycCompleted: 'ceo.kyc.completed',
     // Flow 2 event 8: Legal ตรวจ property + lease
     propertyLeaseInspected: 'property.lease.inspected',
-    // Flow 2 event 9: Legal ร่างสัญญาซื้อขายจริง (เดิมชื่อ contract.draft.created)
+    // Flow 2 event 9: Legal ร่างสัญญาซื้อขายจริง
     purchaseContractDrafted: 'contract.drafted',
   },
 };
