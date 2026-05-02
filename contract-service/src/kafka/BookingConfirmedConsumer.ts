@@ -8,7 +8,6 @@ import {
   PropertyLeaseInspectedProducer,
 } from './ContractDraftCreatedProducer.js';
 import {
-  isReadyForPurchaseContract,
   isSaleBookedCompleteEvent,
   mapSaleBookedToBookingConfirmed,
   type SaleBookedCompleteEvent,
@@ -68,8 +67,9 @@ async function handleBookingConfirmed(raw: string): Promise<void> {
   const parsed = JSON.parse(raw);
   const isSales = isSaleBookedCompleteEvent(parsed);
 
-  // Booking → Legal drafts willing contract immediately
-  // (KYC happens later, by CEO. Property+lease inspection waits for KYC.)
+  // Booking → Legal drafts willing contract immediately.
+  // (KYC happens later, by CEO. After KYC, Legal publishes property.lease.inspected
+  //  and contract.drafted — see handleKycCompleted below.)
   const event: BookingConfirmedEvent = isSales
     ? mapSaleBookedToBookingConfirmed(parsed as SaleBookedCompleteEvent)
     : (parsed as BookingConfirmedEvent);
@@ -90,23 +90,7 @@ async function handleBookingConfirmed(raw: string): Promise<void> {
   );
 
   console.log(
-    `[Flow 2] ⏸ property.lease.inspected รอ ceo.kyc.completed จาก CEO ก่อน`,
-  );
-
-  // Flow 2 event 9 — purchase contract drafted (final), gated on status=SOLD
-  if (isSales) {
-    const sales = parsed as SaleBookedCompleteEvent;
-    if (!isReadyForPurchaseContract(sales)) {
-      console.log(
-        `[Flow 2] ⏸ purchase contract not drafted yet — status=${sales.status} (need SOLD).`,
-      );
-      return;
-    }
-  }
-
-  await PurchaseContractDraftedProducer.send(draftCreated);
-  console.log(
-    `[Flow 2] ✅ DONE publish contract.drafted (status=SOLD) — contractId=${draftCreated.contractId}`,
+    `[Flow 2] ⏸ property.lease.inspected + contract.drafted รอ ceo.kyc.completed จาก CEO ก่อน`,
   );
 }
 
@@ -149,6 +133,7 @@ async function handleKycCompleted(raw: string): Promise<void> {
     `[Flow 2] ✅ KYC approved — proceeding with property+lease inspection for contractId=${contract.contractId}`,
   );
 
+  // Flow 2 event 8 — property + lease inspected
   await PropertyLeaseInspectedProducer.send({
     inspectionId: uuidv4(),
     contractId: contract.contractId,
@@ -161,5 +146,24 @@ async function handleKycCompleted(raw: string): Promise<void> {
   });
   console.log(
     `[Flow 2] ✅ DONE publish property.lease.inspected — contractId=${contract.contractId}`,
+  );
+
+  // Flow 2 event 9 — purchase contract drafted (สัญญาขายจริง)
+  // Per the flow diagram, Legal drafts the purchase contract immediately
+  // after lease inspection — Payment then collects second payment which
+  // updates the property status to "Sold".
+  await PurchaseContractDraftedProducer.send({
+    contractId: contract.contractId,
+    bookingId: contract.bookingId,
+    unitId: contract.unitId,
+    customerId: contract.customerId,
+    status: contract.status,
+    fileUrl: contract.contractDraft?.fileUrl ?? '',
+    templateId: contract.templateId,
+    createdAt: contract.createdAt,
+    draftedAt: contract.contractDraft?.draftedAt ?? new Date().toISOString(),
+  });
+  console.log(
+    `[Flow 2] ✅ DONE publish contract.drafted (purchase contract) — contractId=${contract.contractId}`,
   );
 }
