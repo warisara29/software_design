@@ -3,6 +3,7 @@ import { Acquisition } from '../domain/Acquisition.js';
 import { PropertySurvey } from '../domain/PropertySurvey.js';
 import { SellerInfo } from '../domain/SellerInfo.js';
 import { AcquisitionRepository } from '../repository/AcquisitionRepository.js';
+import { coerceToUuid } from '../util/idCoerce.js';
 
 export interface PropertySurveyedEvent {
   surveyId: string;
@@ -49,12 +50,17 @@ export const AcquisitionService = {
   async receiveSurvey(event: PropertySurveyedEvent): Promise<AcquisitionApprovalRequestedEvent> {
     console.log(`[Command] ReceiveSurvey — surveyId=${event.surveyId}, propertyId=${event.propertyId}`);
 
-    const survey = new PropertySurvey(event.address, event.areaSqm, event.estimatedValue, event.zoneType);
-    const seller = new SellerInfo(event.sellerId ?? uuidv4(), event.sellerName, event.sellerContact);
+    // Coerce string codes (e.g. CEO sends "PROP-001") to deterministic UUIDs
+    const surveyId = coerceToUuid(event.surveyId);
+    const propertyId = coerceToUuid(event.propertyId);
+    const sellerId = event.sellerId ? coerceToUuid(event.sellerId) : uuidv4();
+
+    const survey = new PropertySurvey(event.address ?? '', event.areaSqm ?? 0, event.estimatedValue ?? 0, event.zoneType ?? '');
+    const seller = new SellerInfo(sellerId, event.sellerName ?? '', event.sellerContact ?? '');
 
     const acquisition = Acquisition.fromSurvey({
-      surveyId: event.surveyId,
-      propertyId: event.propertyId,
+      surveyId,
+      propertyId,
       survey,
       seller,
     });

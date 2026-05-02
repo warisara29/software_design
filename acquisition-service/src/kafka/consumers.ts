@@ -29,7 +29,19 @@ export async function startConsumers(): Promise<void> {
       console.log(`[Consumer] ← ${topic}: ${raw}`);
       try {
         if (topic === config.topics.propertySurveyed) {
-          const event = JSON.parse(raw) as PropertySurveyedEvent;
+          const parsed = JSON.parse(raw);
+          // CEO might use different field-name conventions — normalize to our schema
+          const event: PropertySurveyedEvent = {
+            surveyId: parsed.surveyId ?? parsed.SurveyID ?? parsed['Survey ID'] ?? parsed.id ?? '',
+            propertyId: parsed.propertyId ?? parsed.PropertyID ?? parsed['Property ID'] ?? '',
+            address: parsed.address ?? parsed.Address ?? parsed.Location ?? '',
+            areaSqm: Number(parsed.areaSqm ?? parsed.AreaSqm ?? parsed.area ?? 0),
+            estimatedValue: Number(parsed.estimatedValue ?? parsed.EstimatedValue ?? parsed.value ?? parsed.price ?? 0),
+            zoneType: parsed.zoneType ?? parsed.ZoneType ?? parsed.zone ?? '',
+            sellerId: parsed.sellerId ?? parsed.SellerID ?? parsed['Seller ID'],
+            sellerName: parsed.sellerName ?? parsed.SellerName ?? parsed['Seller Name'] ?? '',
+            sellerContact: parsed.sellerContact ?? parsed.SellerContact ?? parsed['Seller Contact'] ?? '',
+          };
           const out = await AcquisitionService.receiveSurvey(event);
 
           // Flow 1 event 2 — Legal+Inventory ตรวจสอบ property แล้ว → CEO รับรู้
