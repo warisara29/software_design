@@ -7,11 +7,20 @@ import {
   WillingContractDraftedProducer,
   PropertyLeaseInspectedProducer,
 } from './ContractDraftCreatedProducer.js';
+import {
+  isSaleBookedCompleteEvent,
+  mapSaleBookedToBookingConfirmed,
+  type SaleBookedCompleteEvent,
+} from '../event/SaleBookedCompleteEvent.js';
 
 const TOPIC = config.topics.bookingConfirmed;
 
 /**
- * Flow: booking.order.confirmed → CreateContractDraft → contract.draft.created
+ * Flow 2 trigger:
+ *   sale.booked.complete (Sales publishes — string codes)
+ *   → mapped to BookingConfirmedEvent (UUIDs)
+ *   → CreateContractDraft
+ *   → publishes willing.contract.drafted + property.lease.inspected + contract.drafted
  */
 export async function startBookingConfirmedConsumer(): Promise<void> {
   try {
@@ -21,7 +30,11 @@ export async function startBookingConfirmedConsumer(): Promise<void> {
         const raw = message.value?.toString() ?? '';
         console.log(`[Consumer] ← ${topic}: ${raw}`);
         try {
-          const event = JSON.parse(raw) as BookingConfirmedEvent;
+          const parsed = JSON.parse(raw);
+          // Sales' Kafka schema vs our REST inbound schema — accept both
+          const event: BookingConfirmedEvent = isSaleBookedCompleteEvent(parsed)
+            ? mapSaleBookedToBookingConfirmed(parsed as SaleBookedCompleteEvent)
+            : (parsed as BookingConfirmedEvent);
           const draftCreated = await ContractDraftService.createContractDraft(event);
 
           // Flow 2 event 6 — willing-to-buy contract drafted
@@ -50,7 +63,7 @@ export async function startBookingConfirmedConsumer(): Promise<void> {
           // Flow 2 event 9 — purchase contract drafted (สัญญาซื้อขายจริง)
           await PurchaseContractDraftedProducer.send(draftCreated);
 
-          console.log(`[Flow 2] booking.order.confirmed → willing → lease.inspected → purchase.contract for bookingId=${event.bookingId}`);
+          console.log(`[Flow 2] sale.booked.complete → willing → lease.inspected → contract.drafted for bookingId=${event.bookingId}`);
         } catch (err) {
           console.error(`[Consumer] failed to process ${topic}:`, err);
         }

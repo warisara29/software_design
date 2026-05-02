@@ -11,7 +11,8 @@ export const config = {
     saslPassword: process.env.KAFKA_API_SECRET,
   },
   topics: {
-    bookingConfirmed: 'booking.order.confirmed',
+    // Flow 2 trigger — Sales publishes when booking confirmed (was: booking.order.confirmed)
+    bookingConfirmed: 'sale.booked.complete',
     // Flow 2 event 6: Legal ร่างสัญญาจะซื้อจะขาย (preliminary willing-to-buy)
     willingContractDrafted: 'willing.contract.drafted',
     // Flow 2 event 8: Legal ตรวจ property + lease

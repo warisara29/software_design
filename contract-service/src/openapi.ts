@@ -46,10 +46,30 @@ export const openapiSpec = {
       BookingConfirmedEvent: {
         type: 'object',
         required: ['bookingId', 'unitId', 'customerId'],
+        description: 'Legacy schema — UUID format. Still accepted by /api/inbound/booking-confirmed for backward compat.',
         properties: {
           bookingId: { type: 'string', format: 'uuid' },
           unitId: { type: 'string', format: 'uuid' },
           customerId: { type: 'string', format: 'uuid' },
+        },
+      },
+      SaleBookedCompleteEvent: {
+        type: 'object',
+        description: "Sales' actual Kafka event schema (string codes, not UUIDs). Topic: sale.booked.complete",
+        required: ['ProjectName', 'PropertyID', 'Customer ID', 'StatusKYC'],
+        properties: {
+          ProjectName: { type: 'string' },
+          'Reservation ID': { type: 'string' },
+          ContractID: { type: 'string' },
+          PropertyID: { type: 'string', example: 'PROP-001' },
+          Location: { type: 'string' },
+          'Customer ID': { type: 'string', example: 'CUST-001' },
+          'Area unit/layout': { type: 'string' },
+          'room type': { type: 'string' },
+          'Price per unit': { type: 'number' },
+          'room number': { type: 'string' },
+          StatusKYC: { type: 'string', enum: ['PASSED', 'PENDING', 'REJECTED'] },
+          PaymentSecondStatus: { type: 'string', enum: ['PENDING', 'CONFIRMED', 'FAILED'] },
         },
       },
       ErrorResponse: {
@@ -112,12 +132,21 @@ export const openapiSpec = {
     '/api/inbound/booking-confirmed': {
       post: {
         tags: ['Inbound (REST fallback)'],
-        summary: 'Trigger contract draft (REST fallback for booking.order.confirmed)',
+        summary: 'Trigger contract draft (REST fallback for sale.booked.complete)',
         description:
-          'Use this when Kafka topics are not yet provisioned. Same payload schema as the Kafka event. Persists contract to DB and best-effort publishes downstream events.',
+          'Use this when Kafka topics are not yet provisioned. Accepts BOTH Sales schema (sale.booked.complete) and legacy UUID schema. Persists contract to DB and best-effort publishes downstream events.',
         requestBody: {
           required: true,
-          content: { 'application/json': { schema: { $ref: '#/components/schemas/BookingConfirmedEvent' } } },
+          content: {
+            'application/json': {
+              schema: {
+                oneOf: [
+                  { $ref: '#/components/schemas/SaleBookedCompleteEvent' },
+                  { $ref: '#/components/schemas/BookingConfirmedEvent' },
+                ],
+              },
+            },
+          },
         },
         responses: {
           200: {
@@ -142,11 +171,11 @@ export const openapiSpec = {
     '/api/test/booking-confirmed': {
       post: {
         tags: ['Test (Kafka simulator)'],
-        summary: 'Publish booking.order.confirmed to Kafka',
-        description: 'Requires the topic to exist on the central cluster. Use /api/inbound/booking-confirmed if topics are not ready yet.',
+        summary: 'Publish sale.booked.complete to Kafka (Sales\' schema)',
+        description: 'Simulates Sales publishing to sale.booked.complete topic. Body fields override defaults.',
         requestBody: {
           required: false,
-          content: { 'application/json': { schema: { $ref: '#/components/schemas/BookingConfirmedEvent' } } },
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/SaleBookedCompleteEvent' } } },
         },
         responses: {
           200: { description: 'Event sent' },

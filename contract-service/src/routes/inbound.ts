@@ -9,30 +9,42 @@ import {
   WillingContractDraftedProducer,
   PropertyLeaseInspectedProducer,
 } from '../kafka/ContractDraftCreatedProducer.js';
+import {
+  isSaleBookedCompleteEvent,
+  mapSaleBookedToBookingConfirmed,
+} from '../event/SaleBookedCompleteEvent.js';
 
 export const inboundRouter = Router();
 
 /**
- * REST fallback for booking.order.confirmed.
- * Lets Sales (or any team) trigger the contract draft flow without Kafka,
- * useful while topics aren't yet provisioned in the central cluster.
+ * REST fallback for sale.booked.complete (Sales) / booking.order.confirmed (legacy).
+ * Accepts BOTH schemas:
+ *   1. Sales' Kafka schema { ProjectName, PropertyID, "Customer ID", StatusKYC, ... }
+ *   2. Our legacy UUID schema { bookingId, unitId, customerId }
  *
  *   POST /api/inbound/booking-confirmed
- *   Body: { bookingId: UUID, unitId: UUID, customerId: UUID }
  *
- * Same payload schema as the Kafka event. Downstream Kafka publishes are
- * best-effort — we log warnings if topics don't exist yet but still
- * persist to DB so REST queries see the new contract.
+ * Downstream Kafka publishes are best-effort — DB save still works even if
+ * topics aren't ready.
  */
 inboundRouter.post('/api/inbound/booking-confirmed', async (req, res) => {
-  const { bookingId, unitId, customerId } = req.body ?? {};
-  if (!bookingId || !unitId || !customerId) {
-    res.status(400).json({ error: 'bookingId, unitId, customerId are required' });
+  const body = req.body ?? {};
+
+  // Accept either Sales' schema or our legacy UUID schema
+  let event: BookingConfirmedEvent;
+  if (isSaleBookedCompleteEvent(body)) {
+    event = mapSaleBookedToBookingConfirmed(body);
+  } else if (body.bookingId && body.unitId && body.customerId) {
+    event = { bookingId: body.bookingId, unitId: body.unitId, customerId: body.customerId };
+  } else {
+    res.status(400).json({
+      error:
+        'Provide either Sales schema {ProjectName, PropertyID, "Customer ID", ...} or {bookingId, unitId, customerId}',
+    });
     return;
   }
 
   try {
-    const event: BookingConfirmedEvent = { bookingId, unitId, customerId };
     const draftCreated = await ContractDraftService.createContractDraft(event);
 
     // best-effort publish — don't fail the request if topics aren't ready
