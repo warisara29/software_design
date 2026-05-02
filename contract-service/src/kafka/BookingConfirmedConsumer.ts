@@ -8,6 +8,8 @@ import {
   PropertyLeaseInspectedProducer,
 } from './ContractDraftCreatedProducer.js';
 import {
+  isKycApproved,
+  isReadyForPurchaseContract,
   isSaleBookedCompleteEvent,
   mapSaleBookedToBookingConfirmed,
   type SaleBookedCompleteEvent,
@@ -33,12 +35,12 @@ export async function startBookingConfirmedConsumer(): Promise<void> {
           const parsed = JSON.parse(raw);
           const isSales = isSaleBookedCompleteEvent(parsed);
 
-          // Flow 2 gate — only draft willing contract when Sales says KYC has passed
+          // Flow 2 gate — only draft willing contract when Sales says KYC has approved
           if (isSales) {
             const sales = parsed as SaleBookedCompleteEvent;
-            if (sales.StatusKYC !== 'PASSED') {
+            if (!isKycApproved(sales)) {
               console.log(
-                `[Flow 2] ⏸ skipped — StatusKYC=${sales.StatusKYC} (need PASSED to draft willing contract)`,
+                `[Flow 2] ⏸ skipped — statusKyc=${sales.statusKyc} (need APPROVED to draft willing contract)`,
               );
               return;
             }
@@ -79,12 +81,12 @@ export async function startBookingConfirmedConsumer(): Promise<void> {
             `[Flow 2] ✅ DONE publish property.lease.inspected — contractId=${draftCreated.contractId}`,
           );
 
-          // Flow 2 event 9 — purchase contract drafted (final), gated on second payment
+          // Flow 2 event 9 — purchase contract drafted (final), gated on status=SOLD
           if (isSales) {
             const sales = parsed as SaleBookedCompleteEvent;
-            if (sales.PaymentSecondStatus !== 'CONFIRMED') {
+            if (!isReadyForPurchaseContract(sales)) {
               console.log(
-                `[Flow 2] ⏸ purchase contract not drafted yet — PaymentSecondStatus=${sales.PaymentSecondStatus} (need CONFIRMED). Will draft when Sales sends another sale.booked.complete with PaymentSecondStatus=CONFIRMED.`,
+                `[Flow 2] ⏸ purchase contract not drafted yet — status=${sales.status} (need SOLD). Will draft when Sales sends another sale.booked.complete with status=SOLD.`,
               );
               return;
             }
@@ -92,7 +94,7 @@ export async function startBookingConfirmedConsumer(): Promise<void> {
 
           await PurchaseContractDraftedProducer.send(draftCreated);
           console.log(
-            `[Flow 2] ✅ DONE publish contract.drafted (PaymentSecondStatus CONFIRMED) — contractId=${draftCreated.contractId}`,
+            `[Flow 2] ✅ DONE publish contract.drafted (status=SOLD) — contractId=${draftCreated.contractId}`,
           );
         } catch (err) {
           console.error(`[Consumer] failed to process ${topic}:`, err);
