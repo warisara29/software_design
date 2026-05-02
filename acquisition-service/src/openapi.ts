@@ -126,7 +126,7 @@ export const openapiSpec = {
     '/api/inbound/property-surveyed': {
       post: {
         tags: ['Inbound (REST fallback)'],
-        summary: 'Receive property survey (REST fallback for property.survey.received)',
+        summary: 'Receive property survey (REST fallback for ceo.property.survey.completed)',
         requestBody: {
           required: true,
           content: { 'application/json': { schema: { $ref: '#/components/schemas/PropertySurveyedEvent' } } },
@@ -148,7 +148,7 @@ export const openapiSpec = {
     '/api/test/property-surveyed': {
       post: {
         tags: ['Test (Kafka simulator)'],
-        summary: 'Publish property.survey.received to Kafka',
+        summary: 'Publish ceo.property.survey.completed to Kafka',
         responses: { 200: { description: 'Event sent' } },
       },
     },

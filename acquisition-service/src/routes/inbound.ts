@@ -13,7 +13,7 @@ import {
 export const inboundRouter = Router();
 
 /**
- * REST fallback for property.survey.received.
+ * REST fallback for ceo.property.survey.completed.
  *
  *   POST /api/inbound/property-surveyed
  *   Body: PropertySurveyedEvent

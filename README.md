@@ -5,7 +5,7 @@
 | # | Service | Flow | Port | DB Schema | Consume | Produce |
 |---|---------|------|------|----|---------|---------|
 | 1 | `contract-service` | Flow 2 (Selling) | 8081 | `contract` | `booking.order.confirmed` | `contract.draft.created` |
-| 2 | `acquisition-service` | Flow 1 (Acquire) | 8082 | `acquisition` | `property.survey.received`, `acquisition.approval.granted` | `acquisition.approval.requested`, `acquisition.contract.drafted` |
+| 2 | `acquisition-service` | Flow 1 (Acquire) | 8082 | `acquisition` | `ceo.property.survey.completed`, `acquisition.approval.granted` | `acquisition.approval.requested`, `acquisition.contract.drafted` |
 | 3 | `warranty-service` | Flow 4 (Defect) | 8083 | `warranty` | `warranty.coverage.registered`, `warranty.defect.reported` | `warranty.coverage.verified` |
 
 > Topic naming: `[domain].[datatype].[action]-topic` — DDD: Aggregate Root + Entity + Value Object + Domain Event
@@ -66,7 +66,7 @@ docker-compose up --build
    ```
    booking.order.confirmed
    contract.draft.created
-   property.survey.received
+   ceo.property.survey.completed
    acquisition.approval.requested
    acquisition.approval.granted
    acquisition.contract.drafted
@@ -170,7 +170,7 @@ curl http://localhost:8083/health
 
 ```
 Flow 1: Acquire Property
-  Inventory ──property.survey.received──► [Acquisition Svc]
+  Inventory ──ceo.property.survey.completed──► [Acquisition Svc]
                                               ──acquisition.approval.requested──► CEO
   CEO ──acquisition.approval.granted──► [Acquisition Svc]
                                             ──acquisition.contract.drafted──► Inventory

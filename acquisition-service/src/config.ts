@@ -11,7 +11,8 @@ export const config = {
     saslPassword: process.env.KAFKA_API_SECRET,
   },
   topics: {
-    propertySurveyed: 'property.survey.received',
+    // Flow 1 trigger — CEO publishes after property survey complete (was: property.survey.received)
+    propertySurveyed: 'ceo.property.survey.completed',
     acquisitionApprovalRequested: 'acquisition.approval.requested',
     acquisitionApproved: 'acquisition.approval.granted',
     acquisitionContractDrafted: 'acquisition.contract.drafted',
