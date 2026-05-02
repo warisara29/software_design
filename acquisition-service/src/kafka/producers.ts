@@ -7,7 +7,7 @@ import type {
 import type { PropertyInspectedEvent } from '../event/PropertyInspectedEvent.js';
 
 function logProducerSend(topic: string, event: unknown): void {
-  console.log(`[Producer] → ${topic}: ${JSON.stringify(event)}`);
+  console.log(`\n[Producer] → ${topic}\n${JSON.stringify(event, null, 2)}`);
 }
 
 export const AcquisitionApprovalRequestedProducer = {

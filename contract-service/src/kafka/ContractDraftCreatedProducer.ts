@@ -5,7 +5,7 @@ import type { WillingContractDraftedEvent } from '../event/WillingContractDrafte
 import type { PropertyLeaseInspectedEvent } from '../event/PropertyLeaseInspectedEvent.js';
 
 function logProducerSend(topic: string, event: unknown): void {
-  console.log(`[Producer] → ${topic}: ${JSON.stringify(event)}`);
+  console.log(`\n[Producer] → ${topic}\n${JSON.stringify(event, null, 2)}`);
 }
 
 /**

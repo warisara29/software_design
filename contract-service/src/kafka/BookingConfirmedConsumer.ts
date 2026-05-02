@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { config } from '../config.js';
 import { consumer } from './client.js';
+import { prettyJson } from './log.js';
 import { ContractDraftService, type BookingConfirmedEvent } from '../service/ContractDraftService.js';
 import {
   PurchaseContractDraftedProducer,
@@ -40,7 +41,7 @@ export async function startBookingConfirmedConsumer(): Promise<void> {
   await consumer.run({
     eachMessage: async ({ topic, message }) => {
       const raw = message.value?.toString() ?? '';
-      console.log(`[Consumer] ← ${topic}: ${raw}`);
+      console.log(`\n[Consumer] ← ${topic}\n${prettyJson(raw)}`);
       try {
         if (topic === BOOKING_TOPIC) {
           await handleBookingConfirmed(raw);

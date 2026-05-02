@@ -4,6 +4,7 @@ import {
   AcquisitionService,
   type PropertySurveyedEvent,
 } from '../service/AcquisitionService.js';
+import { prettyJson } from './log.js';
 
 /**
  * Flow 1 (simplified) — เข้าซื้อ property จาก seller
@@ -27,7 +28,7 @@ export async function startConsumers(): Promise<void> {
   await consumer.run({
     eachMessage: async ({ topic, message }) => {
       const raw = message.value?.toString() ?? '';
-      console.log(`[Consumer] ← ${topic}: ${raw}`);
+      console.log(`\n[Consumer] ← ${topic}\n${prettyJson(raw)}`);
       try {
         if (topic === config.topics.propertySurveyed) {
           const parsed = JSON.parse(raw);

@@ -6,6 +6,7 @@ import {
   type WarrantyRegisteredEvent,
 } from '../service/WarrantyVerificationService.js';
 import { WarrantyVerifiedProducer } from './producers.js';
+import { prettyJson } from './log.js';
 
 /**
  * Some teams (e.g. Post-sale) publish a CloudEvents-like envelope:
@@ -75,7 +76,7 @@ export async function startConsumers(): Promise<void> {
   await consumer.run({
     eachMessage: async ({ topic, message }) => {
       const raw = message.value?.toString() ?? '';
-      console.log(`[Consumer] ← ${topic}: ${raw}`);
+      console.log(`\n[Consumer] ← ${topic}\n${prettyJson(raw)}`);
       try {
         if (topic === config.topics.warrantyRegistered) {
           const event = unwrapEnvelope<WarrantyRegisteredEvent>(raw);
