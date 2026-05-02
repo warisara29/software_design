@@ -3,6 +3,7 @@ import { CoverageScope } from '../domain/CoverageScope.js';
 import { DefectCategory, parseDefectCategory } from '../domain/DefectCategory.js';
 import { Warranty } from '../domain/Warranty.js';
 import { WarrantyRepository } from '../repository/WarrantyRepository.js';
+import { coerceToUuid } from '../util/idCoerce.js';
 
 export interface WarrantyRegisteredEvent {
   contractId: string;
@@ -49,9 +50,9 @@ export const WarrantyVerificationService = {
     const scope = new CoverageScope(categories);
 
     const warranty = Warranty.register({
-      contractId: event.contractId,
-      unitId: event.unitId,
-      customerId: event.customerId,
+      contractId: coerceToUuid(event.contractId),
+      unitId: coerceToUuid(event.unitId),
+      customerId: coerceToUuid(event.customerId),
       period,
       scope,
     });
@@ -64,19 +65,25 @@ export const WarrantyVerificationService = {
   async verifyDefect(event: DefectReportedEvent): Promise<WarrantyVerifiedEvent> {
     console.log(`[Command] VerifyClaim — defectId=${event.defectId}, contractId=${event.contractId}`);
 
-    let warranty = await WarrantyRepository.findByContractId(event.contractId);
+    // Coerce string codes (e.g. "PROP-001") to deterministic UUIDs
+    const contractId = coerceToUuid(event.contractId);
+    const unitId = coerceToUuid(event.unitId);
+    const customerId = coerceToUuid(event.customerId);
+    const defectId = coerceToUuid(event.defectId);
+
+    let warranty = await WarrantyRepository.findByContractId(contractId);
     if (!warranty) {
       console.warn(
-        `[Service] No warranty found for contractId=${event.contractId}, creating default 1y full-scope warranty`,
+        `[Service] No warranty found for contractId=${contractId}, creating default 1y full-scope warranty`,
       );
       const now = new Date();
       const ends = new Date(now.getTime() + ONE_YEAR_SECONDS * 1000);
       const period = new CoveragePeriod(now.toISOString(), ends.toISOString());
       const scope = new CoverageScope(Object.values(DefectCategory));
       warranty = Warranty.register({
-        contractId: event.contractId,
-        unitId: event.unitId,
-        customerId: event.customerId,
+        contractId,
+        unitId,
+        customerId,
         period,
         scope,
       });
@@ -87,7 +94,7 @@ export const WarrantyVerificationService = {
     const reportedAt = event.reportedAt ?? new Date().toISOString();
 
     const claim = warranty.verifyClaim({
-      defectId: event.defectId,
+      defectId,
       defectCategory: category,
       description: event.description,
       reportedAt,
