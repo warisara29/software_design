@@ -8,6 +8,15 @@ export interface BookingConfirmedEvent {
   bookingId: string;
   unitId: string;
   customerId: string;
+  // Optional booking metadata captured from Sales
+  projectName?: string;
+  location?: string;
+  areaUnit?: string;
+  roomType?: string;
+  roomNumber?: string;
+  pricePerUnit?: number;
+  statusKyc?: string;
+  paymentSecondStatus?: string;
 }
 
 export interface ContractDraftCreatedEvent {
@@ -20,6 +29,15 @@ export interface ContractDraftCreatedEvent {
   templateId: string;
   createdAt: string;
   draftedAt: string;
+  // Booking metadata passed through to subscribers (Payment, Post-sale, ...)
+  projectName?: string;
+  location?: string;
+  areaUnit?: string;
+  roomType?: string;
+  roomNumber?: string;
+  totalPrice?: number;
+  statusKyc?: string;
+  paymentSecondStatus?: string;
 }
 
 /**
@@ -29,7 +47,7 @@ export interface ContractDraftCreatedEvent {
 export const ContractDraftService = {
   async createContractDraft(event: BookingConfirmedEvent): Promise<ContractDraftCreatedEvent> {
     console.log(
-      `[Command] CreateContractDraft — bookingId=${event.bookingId}, unitId=${event.unitId}, customerId=${event.customerId}`,
+      `[Command] CreateContractDraft — bookingId=${event.bookingId}, unitId=${event.unitId}, customerId=${event.customerId}, price=${event.pricePerUnit ?? 'n/a'}`,
     );
 
     // Coerce string codes (e.g. "PROP-001") to deterministic UUIDs
@@ -52,10 +70,20 @@ export const ContractDraftService = {
       templateId,
       parties,
       fileUrl,
+      projectName: event.projectName,
+      location: event.location,
+      areaUnit: event.areaUnit,
+      roomType: event.roomType,
+      roomNumber: event.roomNumber,
+      totalPrice: event.pricePerUnit,
+      statusKyc: event.statusKyc,
+      paymentSecondStatus: event.paymentSecondStatus,
     });
     await ContractRepository.save(contract);
 
-    console.log(`[Domain Event] ContractDraftCreated: contractId=${contract.contractId}, status=DRAFT`);
+    console.log(
+      `[Domain Event] ContractDraftCreated: contractId=${contract.contractId}, status=DRAFT, totalPrice=${contract.totalPrice ?? 'n/a'}`,
+    );
 
     return {
       contractId: contract.contractId,
@@ -67,6 +95,14 @@ export const ContractDraftService = {
       templateId: contract.templateId,
       createdAt: contract.createdAt,
       draftedAt: contract.contractDraft!.draftedAt,
+      projectName: contract.projectName,
+      location: contract.location,
+      areaUnit: contract.areaUnit,
+      roomType: contract.roomType,
+      roomNumber: contract.roomNumber,
+      totalPrice: contract.totalPrice,
+      statusKyc: contract.statusKyc,
+      paymentSecondStatus: contract.paymentSecondStatus,
     };
   },
 };

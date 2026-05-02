@@ -19,6 +19,14 @@ interface ContractRow {
   deposit_amount: string | null;
   penalty_conditions: string | null;
   draft_id: string | null;
+  // booking metadata
+  project_name: string | null;
+  location: string | null;
+  area_unit: string | null;
+  room_type: string | null;
+  room_number: string | null;
+  status_kyc: string | null;
+  payment_second_status: string | null;
   // joined
   draft_file_url?: string | null;
   draft_template_id?: string | null;
@@ -55,6 +63,14 @@ function rowToContract(row: ContractRow): Contract {
       row.draft_drafted_at.toISOString(),
     );
   }
+  c.totalPrice = row.total_price !== null ? Number(row.total_price) : undefined;
+  c.projectName = row.project_name ?? undefined;
+  c.location = row.location ?? undefined;
+  c.areaUnit = row.area_unit ?? undefined;
+  c.roomType = row.room_type ?? undefined;
+  c.roomNumber = row.room_number ?? undefined;
+  c.statusKyc = row.status_kyc ?? undefined;
+  c.paymentSecondStatus = row.payment_second_status ?? undefined;
   return c;
 }
 
@@ -76,12 +92,23 @@ export const ContractRepository = {
       }
       await client.query(
         `INSERT INTO contracts (contract_id, status, version, template_id, created_at,
-                                booking_id, customer_id, unit_id, buyer_id, seller_id, draft_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                                booking_id, customer_id, unit_id, buyer_id, seller_id, draft_id,
+                                total_price, project_name, location, area_unit, room_type,
+                                room_number, status_kyc, payment_second_status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
+                 $12, $13, $14, $15, $16, $17, $18, $19)
          ON CONFLICT (contract_id) DO UPDATE SET
            status = EXCLUDED.status,
            version = EXCLUDED.version,
-           draft_id = EXCLUDED.draft_id`,
+           draft_id = EXCLUDED.draft_id,
+           total_price = COALESCE(EXCLUDED.total_price, contracts.total_price),
+           project_name = COALESCE(EXCLUDED.project_name, contracts.project_name),
+           location = COALESCE(EXCLUDED.location, contracts.location),
+           area_unit = COALESCE(EXCLUDED.area_unit, contracts.area_unit),
+           room_type = COALESCE(EXCLUDED.room_type, contracts.room_type),
+           room_number = COALESCE(EXCLUDED.room_number, contracts.room_number),
+           status_kyc = COALESCE(EXCLUDED.status_kyc, contracts.status_kyc),
+           payment_second_status = COALESCE(EXCLUDED.payment_second_status, contracts.payment_second_status)`,
         [
           c.contractId,
           c.status,
@@ -94,6 +121,14 @@ export const ContractRepository = {
           c.parties?.buyerId ?? null,
           c.parties?.sellerId ?? null,
           c.contractDraft?.draftId ?? null,
+          c.totalPrice ?? null,
+          c.projectName ?? null,
+          c.location ?? null,
+          c.areaUnit ?? null,
+          c.roomType ?? null,
+          c.roomNumber ?? null,
+          c.statusKyc ?? null,
+          c.paymentSecondStatus ?? null,
         ],
       );
     });

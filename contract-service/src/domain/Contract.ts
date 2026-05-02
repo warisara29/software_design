@@ -21,6 +21,15 @@ export class Contract {
   parties?: ContractParties;
   terms?: ContractTerms;
   contractDraft?: ContractDraft;
+  // Booking metadata captured from Sales' sale.booked.complete
+  projectName?: string;
+  location?: string;
+  areaUnit?: string;
+  roomType?: string;
+  roomNumber?: string;
+  totalPrice?: number;
+  statusKyc?: string;
+  paymentSecondStatus?: string;
 
   /**
    * Command: CreateContractDraft
@@ -34,6 +43,14 @@ export class Contract {
     templateId: string;
     parties: ContractParties;
     fileUrl: string;
+    projectName?: string;
+    location?: string;
+    areaUnit?: string;
+    roomType?: string;
+    roomNumber?: string;
+    totalPrice?: number;
+    statusKyc?: string;
+    paymentSecondStatus?: string;
   }): Contract {
     const c = new Contract();
     c.contractId = uuidv4();
@@ -45,6 +62,14 @@ export class Contract {
     c.createdAt = new Date().toISOString();
     c.parties = input.parties;
     c.contractDraft = ContractDraft.create(input.templateId, input.fileUrl);
+    c.projectName = input.projectName;
+    c.location = input.location;
+    c.areaUnit = input.areaUnit;
+    c.roomType = input.roomType;
+    c.roomNumber = input.roomNumber;
+    c.totalPrice = input.totalPrice;
+    c.statusKyc = input.statusKyc;
+    c.paymentSecondStatus = input.paymentSecondStatus;
     return c;
   }
 }

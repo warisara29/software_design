@@ -67,5 +67,18 @@ export async function initSchema(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_contracts_customer ON ${SCHEMA}.contracts(customer_id);
   `);
 
+  // Booking metadata captured from Sales — added incrementally via ALTER
+  // (so existing deployments keep their data; new columns just become available)
+  await pool.query(`
+    ALTER TABLE ${SCHEMA}.contracts
+      ADD COLUMN IF NOT EXISTS project_name           TEXT,
+      ADD COLUMN IF NOT EXISTS location               TEXT,
+      ADD COLUMN IF NOT EXISTS area_unit              TEXT,
+      ADD COLUMN IF NOT EXISTS room_type              TEXT,
+      ADD COLUMN IF NOT EXISTS room_number            TEXT,
+      ADD COLUMN IF NOT EXISTS status_kyc             TEXT,
+      ADD COLUMN IF NOT EXISTS payment_second_status  TEXT;
+  `);
+
   console.log(`[DB] Schema "${SCHEMA}" ready`);
 }

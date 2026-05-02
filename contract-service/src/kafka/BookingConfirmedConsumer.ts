@@ -10,7 +10,7 @@ import {
 import {
   isSaleBookedCompleteEvent,
   mapSaleBookedToBookingConfirmed,
-  type SaleBookedCompleteEvent,
+  normalizeSalesEvent,
 } from '../event/SaleBookedCompleteEvent.js';
 
 const BOOKING_TOPIC = config.topics.bookingConfirmed;
@@ -54,11 +54,13 @@ export async function startBookingConfirmedConsumer(): Promise<void> {
 
 async function handleBookingConfirmed(raw: string): Promise<void> {
   const parsed = JSON.parse(raw);
-  const isSales = isSaleBookedCompleteEvent(parsed);
 
-  const event: BookingConfirmedEvent = isSales
-    ? mapSaleBookedToBookingConfirmed(parsed as SaleBookedCompleteEvent)
-    : (parsed as BookingConfirmedEvent);
+  let event: BookingConfirmedEvent;
+  if (isSaleBookedCompleteEvent(parsed)) {
+    event = mapSaleBookedToBookingConfirmed(normalizeSalesEvent(parsed));
+  } else {
+    event = parsed as BookingConfirmedEvent;
+  }
   const draftCreated = await ContractDraftService.createContractDraft(event);
 
   // Flow 2 event 6 — willing-to-buy contract drafted
@@ -70,6 +72,14 @@ async function handleBookingConfirmed(raw: string): Promise<void> {
     customerId: draftCreated.customerId,
     fileUrl: draftCreated.fileUrl,
     draftedAt: draftCreated.draftedAt,
+    projectName: draftCreated.projectName,
+    location: draftCreated.location,
+    areaUnit: draftCreated.areaUnit,
+    roomType: draftCreated.roomType,
+    roomNumber: draftCreated.roomNumber,
+    totalPrice: draftCreated.totalPrice,
+    statusKyc: draftCreated.statusKyc,
+    paymentSecondStatus: draftCreated.paymentSecondStatus,
   });
   console.log(
     `[Flow 2] ✅ DONE publish willing.contract.drafted — contractId=${draftCreated.contractId}`,

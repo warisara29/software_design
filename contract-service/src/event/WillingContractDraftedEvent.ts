@@ -11,4 +11,13 @@ export interface WillingContractDraftedEvent {
   customerId: string;
   fileUrl: string;
   draftedAt: string;
+  // Booking metadata captured from Sales (passed through to subscribers)
+  projectName?: string;
+  location?: string;
+  areaUnit?: string;
+  roomType?: string;
+  roomNumber?: string;
+  totalPrice?: number;
+  statusKyc?: string;
+  paymentSecondStatus?: string;
 }

@@ -12,6 +12,7 @@ import {
 import {
   isSaleBookedCompleteEvent,
   mapSaleBookedToBookingConfirmed,
+  normalizeSalesEvent,
 } from '../event/SaleBookedCompleteEvent.js';
 
 export const inboundRouter = Router();
@@ -33,7 +34,7 @@ inboundRouter.post('/api/inbound/booking-confirmed', async (req, res) => {
   // Accept either Sales' schema or our legacy UUID schema
   let event: BookingConfirmedEvent;
   if (isSaleBookedCompleteEvent(body)) {
-    event = mapSaleBookedToBookingConfirmed(body);
+    event = mapSaleBookedToBookingConfirmed(normalizeSalesEvent(body));
   } else if (body.bookingId && body.unitId && body.customerId) {
     event = { bookingId: body.bookingId, unitId: body.unitId, customerId: body.customerId };
   } else {
