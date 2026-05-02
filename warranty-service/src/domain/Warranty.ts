@@ -53,12 +53,12 @@ export class Warranty {
     description: string;
     reportedAt: string;
   }): WarrantyClaim {
-    const alreadyActive = this.claims.some(
+    // Idempotent — if same defectId already has an active (non-rejected) claim, return it.
+    // Kafka may redeliver events; same command + same input must produce same outcome.
+    const existing = this.claims.find(
       (c) => c.defectId === input.defectId && c.coverageStatus !== CoverageStatus.REJECTED,
     );
-    if (alreadyActive) {
-      throw new Error(`Active claim already exists for defectId=${input.defectId}`);
-    }
+    if (existing) return existing;
 
     const claim = WarrantyClaim.create(input.defectId, input.defectCategory, input.description, input.reportedAt);
 

@@ -8,6 +8,26 @@ import {
 import { WarrantyVerifiedProducer } from './producers.js';
 
 /**
+ * Some teams (e.g. Post-sale) publish a CloudEvents-like envelope:
+ *   { eventId, eventType, timestamp, data: { ...actualFields }, metadata }
+ *
+ * Others publish the fields flat. Unwrap to inner data when envelope detected.
+ */
+function unwrapEnvelope<T>(raw: string): T {
+  const parsed = JSON.parse(raw);
+  if (
+    parsed &&
+    typeof parsed === 'object' &&
+    'data' in parsed &&
+    parsed.data &&
+    typeof parsed.data === 'object'
+  ) {
+    return parsed.data as T;
+  }
+  return parsed as T;
+}
+
+/**
  * DefectCaseClosed — published by Post-sale on topic
  *   `postsales.caseclosed.completed`  (primary, per Post-sale spec)
  *   `case.closed`                      (legacy — เก็บไว้ subscribe ด้วย)
@@ -58,17 +78,17 @@ export async function startConsumers(): Promise<void> {
       console.log(`[Consumer] ← ${topic}: ${raw}`);
       try {
         if (topic === config.topics.warrantyRegistered) {
-          const event = JSON.parse(raw) as WarrantyRegisteredEvent;
+          const event = unwrapEnvelope<WarrantyRegisteredEvent>(raw);
           await WarrantyVerificationService.registerWarranty(event);
         } else if (topic === config.topics.defectReported) {
-          const event = JSON.parse(raw) as DefectReportedEvent;
+          const event = unwrapEnvelope<DefectReportedEvent>(raw);
           const out = await WarrantyVerificationService.verifyDefect(event);
           await WarrantyVerifiedProducer.send(out);
         } else if (
           topic === config.topics.caseClosed ||
           topic === config.topics.caseClosedLegacy
         ) {
-          const event = JSON.parse(raw) as CaseClosedEvent;
+          const event = unwrapEnvelope<CaseClosedEvent>(raw);
           // Flow 4 event 5 — Legal archive case ในระบบ (read-only side effect)
           // Handle both primary (postsales.caseclosed.completed) + legacy (case.closed) schemas
           console.log(
