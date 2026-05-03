@@ -21,6 +21,31 @@ export class Acquisition {
   survey!: PropertySurvey;
   seller!: SellerInfo;
   willingContract?: WillingContract;
+  // Rich property + unit metadata captured from CEO's survey
+  propertyDeveloper?: string;
+  propertyName?: string;
+  propertyType?: string;
+  propertyCode?: string;
+  city?: string;
+  currency?: string;
+  registration?: string;
+  createdBy?: string;
+  unitId?: string;
+  unitCode?: string;
+  unitArea?: number;
+  bedroomType?: string;
+  unitAddress?: string;
+  bathrooms?: number;
+  view?: string;
+  furniture?: string;
+  facility?: string;
+  pictureUrls?: string[];
+  cost?: number;
+  minSalePrice?: number;
+  price?: number;
+  saleTeamLead?: string;
+  commission?: number;
+  externalStatus?: string;
 
   /**
    * Factory: เริ่ม acquisition จาก property.surveyed event

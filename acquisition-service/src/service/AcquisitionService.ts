@@ -5,17 +5,8 @@ import { SellerInfo } from '../domain/SellerInfo.js';
 import { AcquisitionRepository } from '../repository/AcquisitionRepository.js';
 import { coerceToUuid } from '../util/idCoerce.js';
 
-export interface PropertySurveyedEvent {
-  surveyId: string;
-  propertyId: string;
-  address: string;
-  areaSqm: number;
-  estimatedValue: number;
-  zoneType: string;
-  sellerId?: string;
-  sellerName: string;
-  sellerContact: string;
-}
+export type { PropertySurveyedEvent } from '../event/PropertySurveyedEvent.js';
+import type { PropertySurveyedEvent } from '../event/PropertySurveyedEvent.js';
 
 export interface AcquisitionApprovalRequestedEvent {
   acquisitionId: string;
@@ -48,15 +39,25 @@ export const AcquisitionService = {
    * Command: ReceiveSurvey + RequestApproval
    */
   async receiveSurvey(event: PropertySurveyedEvent): Promise<AcquisitionApprovalRequestedEvent> {
-    console.log(`[Command] ReceiveSurvey — surveyId=${event.surveyId}, propertyId=${event.propertyId}`);
+    console.log(
+      `[Command] ReceiveSurvey — propertyId=${event.propertyId}, name=${event.propertyName ?? 'n/a'}, price=${event.price ?? 'n/a'}`,
+    );
 
     // Coerce string codes (e.g. CEO sends "PROP-001") to deterministic UUIDs
-    const surveyId = coerceToUuid(event.surveyId);
+    const surveyId = coerceToUuid(event.surveyId ?? event.propertyId);
     const propertyId = coerceToUuid(event.propertyId);
     const sellerId = event.sellerId ? coerceToUuid(event.sellerId) : uuidv4();
 
-    const survey = new PropertySurvey(event.address ?? '', event.areaSqm ?? 0, event.estimatedValue ?? 0, event.zoneType ?? '');
-    const seller = new SellerInfo(sellerId, event.sellerName ?? '', event.sellerContact ?? '');
+    // Backfill from new schema where fields differ in name
+    const address = event.propertyAddress ?? event.address ?? '';
+    const areaSqm = event.unitArea ?? event.areaSqm ?? 0;
+    const estimatedValue = event.price ?? event.estimatedValue ?? 0;
+    const zoneType = event.zoneType ?? event.propertyType ?? '';
+    const sellerName = event.sellerName ?? event.propertyDeveloper ?? '';
+    const sellerContact = event.sellerContact ?? '';
+
+    const survey = new PropertySurvey(address, areaSqm, estimatedValue, zoneType);
+    const seller = new SellerInfo(sellerId, sellerName, sellerContact);
 
     const acquisition = Acquisition.fromSurvey({
       surveyId,
@@ -64,6 +65,32 @@ export const AcquisitionService = {
       survey,
       seller,
     });
+    // Capture rich property + unit + pricing metadata
+    acquisition.propertyDeveloper = event.propertyDeveloper;
+    acquisition.propertyName = event.propertyName;
+    acquisition.propertyType = event.propertyType;
+    acquisition.propertyCode = event.propertyCode;
+    acquisition.city = event.city;
+    acquisition.currency = event.currency;
+    acquisition.registration = event.registration;
+    acquisition.createdBy = event.createdBy;
+    acquisition.unitId = event.unitId ? coerceToUuid(event.unitId) : undefined;
+    acquisition.unitCode = event.unitCode;
+    acquisition.unitArea = event.unitArea;
+    acquisition.bedroomType = event.bedroomType;
+    acquisition.unitAddress = event.unitAddress;
+    acquisition.bathrooms = event.bathrooms;
+    acquisition.view = event.view;
+    acquisition.furniture = event.furniture;
+    acquisition.facility = event.facility;
+    acquisition.pictureUrls = event.pictureUrls;
+    acquisition.cost = event.cost;
+    acquisition.minSalePrice = event.minSalePrice;
+    acquisition.price = event.price;
+    acquisition.saleTeamLead = event.saleTeamLead;
+    acquisition.commission = event.commission;
+    acquisition.externalStatus = event.status;
+
     acquisition.requestApproval();
     await AcquisitionRepository.save(acquisition);
 

@@ -72,5 +72,34 @@ export async function initSchema(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_acquisitions_survey ON ${SCHEMA}.acquisitions(survey_id);
   `);
 
+  // Rich property + unit metadata captured from CEO's survey — added incrementally
+  await pool.query(`
+    ALTER TABLE ${SCHEMA}.acquisitions
+      ADD COLUMN IF NOT EXISTS property_developer TEXT,
+      ADD COLUMN IF NOT EXISTS property_name      TEXT,
+      ADD COLUMN IF NOT EXISTS property_type      TEXT,
+      ADD COLUMN IF NOT EXISTS property_code      TEXT,
+      ADD COLUMN IF NOT EXISTS city               TEXT,
+      ADD COLUMN IF NOT EXISTS currency           TEXT,
+      ADD COLUMN IF NOT EXISTS registration       TEXT,
+      ADD COLUMN IF NOT EXISTS created_by         TEXT,
+      ADD COLUMN IF NOT EXISTS unit_id            UUID,
+      ADD COLUMN IF NOT EXISTS unit_code          TEXT,
+      ADD COLUMN IF NOT EXISTS unit_area          NUMERIC,
+      ADD COLUMN IF NOT EXISTS bedroom_type       TEXT,
+      ADD COLUMN IF NOT EXISTS unit_address       TEXT,
+      ADD COLUMN IF NOT EXISTS bathrooms          INTEGER,
+      ADD COLUMN IF NOT EXISTS view               TEXT,
+      ADD COLUMN IF NOT EXISTS furniture          TEXT,
+      ADD COLUMN IF NOT EXISTS facility           TEXT,
+      ADD COLUMN IF NOT EXISTS picture_urls       TEXT[],
+      ADD COLUMN IF NOT EXISTS cost               NUMERIC,
+      ADD COLUMN IF NOT EXISTS min_sale_price     NUMERIC,
+      ADD COLUMN IF NOT EXISTS price              NUMERIC,
+      ADD COLUMN IF NOT EXISTS sale_team_lead     TEXT,
+      ADD COLUMN IF NOT EXISTS commission         NUMERIC,
+      ADD COLUMN IF NOT EXISTS external_status    TEXT;
+  `);
+
   console.log(`[DB] Schema "${SCHEMA}" ready`);
 }

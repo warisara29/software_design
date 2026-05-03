@@ -21,6 +21,31 @@ interface AcquisitionRow {
   seller_name: string | null;
   seller_contact: string | null;
   willing_contract_id: string | null;
+  // rich property + unit metadata
+  property_developer: string | null;
+  property_name: string | null;
+  property_type: string | null;
+  property_code: string | null;
+  city: string | null;
+  currency: string | null;
+  registration: string | null;
+  created_by: string | null;
+  unit_id: string | null;
+  unit_code: string | null;
+  unit_area: string | null;
+  bedroom_type: string | null;
+  unit_address: string | null;
+  bathrooms: number | null;
+  view: string | null;
+  furniture: string | null;
+  facility: string | null;
+  picture_urls: string[] | null;
+  cost: string | null;
+  min_sale_price: string | null;
+  price: string | null;
+  sale_team_lead: string | null;
+  commission: string | null;
+  external_status: string | null;
   // joined
   wc_file_url?: string | null;
   wc_agreed_price?: string | null;
@@ -67,6 +92,30 @@ function rowToAcquisition(row: AcquisitionRow): Acquisition {
       row.wc_drafted_at.toISOString(),
     );
   }
+  a.propertyDeveloper = row.property_developer ?? undefined;
+  a.propertyName = row.property_name ?? undefined;
+  a.propertyType = row.property_type ?? undefined;
+  a.propertyCode = row.property_code ?? undefined;
+  a.city = row.city ?? undefined;
+  a.currency = row.currency ?? undefined;
+  a.registration = row.registration ?? undefined;
+  a.createdBy = row.created_by ?? undefined;
+  a.unitId = row.unit_id ?? undefined;
+  a.unitCode = row.unit_code ?? undefined;
+  a.unitArea = row.unit_area !== null ? Number(row.unit_area) : undefined;
+  a.bedroomType = row.bedroom_type ?? undefined;
+  a.unitAddress = row.unit_address ?? undefined;
+  a.bathrooms = row.bathrooms ?? undefined;
+  a.view = row.view ?? undefined;
+  a.furniture = row.furniture ?? undefined;
+  a.facility = row.facility ?? undefined;
+  a.pictureUrls = row.picture_urls ?? undefined;
+  a.cost = row.cost !== null ? Number(row.cost) : undefined;
+  a.minSalePrice = row.min_sale_price !== null ? Number(row.min_sale_price) : undefined;
+  a.price = row.price !== null ? Number(row.price) : undefined;
+  a.saleTeamLead = row.sale_team_lead ?? undefined;
+  a.commission = row.commission !== null ? Number(row.commission) : undefined;
+  a.externalStatus = row.external_status ?? undefined;
   return a;
 }
 
@@ -88,15 +137,47 @@ export const AcquisitionRepository = {
         );
       }
       await client.query(
-        `INSERT INTO acquisitions (acquisition_id, status, version, created_at, approved_at,
-                                    survey_id, property_id, address, area_sqm, estimated_value, zone_type,
-                                    seller_id, seller_name, seller_contact, willing_contract_id)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+        `INSERT INTO acquisitions (
+            acquisition_id, status, version, created_at, approved_at,
+            survey_id, property_id, address, area_sqm, estimated_value, zone_type,
+            seller_id, seller_name, seller_contact, willing_contract_id,
+            property_developer, property_name, property_type, property_code,
+            city, currency, registration, created_by,
+            unit_id, unit_code, unit_area, bedroom_type, unit_address,
+            bathrooms, view, furniture, facility, picture_urls,
+            cost, min_sale_price, price, sale_team_lead, commission, external_status)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,
+                 $16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,
+                 $29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39)
          ON CONFLICT (acquisition_id) DO UPDATE SET
            status = EXCLUDED.status,
            version = EXCLUDED.version,
            approved_at = EXCLUDED.approved_at,
-           willing_contract_id = EXCLUDED.willing_contract_id`,
+           willing_contract_id = EXCLUDED.willing_contract_id,
+           property_developer = COALESCE(EXCLUDED.property_developer, acquisitions.property_developer),
+           property_name = COALESCE(EXCLUDED.property_name, acquisitions.property_name),
+           property_type = COALESCE(EXCLUDED.property_type, acquisitions.property_type),
+           property_code = COALESCE(EXCLUDED.property_code, acquisitions.property_code),
+           city = COALESCE(EXCLUDED.city, acquisitions.city),
+           currency = COALESCE(EXCLUDED.currency, acquisitions.currency),
+           registration = COALESCE(EXCLUDED.registration, acquisitions.registration),
+           created_by = COALESCE(EXCLUDED.created_by, acquisitions.created_by),
+           unit_id = COALESCE(EXCLUDED.unit_id, acquisitions.unit_id),
+           unit_code = COALESCE(EXCLUDED.unit_code, acquisitions.unit_code),
+           unit_area = COALESCE(EXCLUDED.unit_area, acquisitions.unit_area),
+           bedroom_type = COALESCE(EXCLUDED.bedroom_type, acquisitions.bedroom_type),
+           unit_address = COALESCE(EXCLUDED.unit_address, acquisitions.unit_address),
+           bathrooms = COALESCE(EXCLUDED.bathrooms, acquisitions.bathrooms),
+           view = COALESCE(EXCLUDED.view, acquisitions.view),
+           furniture = COALESCE(EXCLUDED.furniture, acquisitions.furniture),
+           facility = COALESCE(EXCLUDED.facility, acquisitions.facility),
+           picture_urls = COALESCE(EXCLUDED.picture_urls, acquisitions.picture_urls),
+           cost = COALESCE(EXCLUDED.cost, acquisitions.cost),
+           min_sale_price = COALESCE(EXCLUDED.min_sale_price, acquisitions.min_sale_price),
+           price = COALESCE(EXCLUDED.price, acquisitions.price),
+           sale_team_lead = COALESCE(EXCLUDED.sale_team_lead, acquisitions.sale_team_lead),
+           commission = COALESCE(EXCLUDED.commission, acquisitions.commission),
+           external_status = COALESCE(EXCLUDED.external_status, acquisitions.external_status)`,
         [
           a.acquisitionId,
           a.status,
@@ -113,6 +194,30 @@ export const AcquisitionRepository = {
           a.seller?.sellerName ?? null,
           a.seller?.contactInfo ?? null,
           a.willingContract?.willingContractId ?? null,
+          a.propertyDeveloper ?? null,
+          a.propertyName ?? null,
+          a.propertyType ?? null,
+          a.propertyCode ?? null,
+          a.city ?? null,
+          a.currency ?? null,
+          a.registration ?? null,
+          a.createdBy ?? null,
+          a.unitId ?? null,
+          a.unitCode ?? null,
+          a.unitArea ?? null,
+          a.bedroomType ?? null,
+          a.unitAddress ?? null,
+          a.bathrooms ?? null,
+          a.view ?? null,
+          a.furniture ?? null,
+          a.facility ?? null,
+          a.pictureUrls ?? null,
+          a.cost ?? null,
+          a.minSalePrice ?? null,
+          a.price ?? null,
+          a.saleTeamLead ?? null,
+          a.commission ?? null,
+          a.externalStatus ?? null,
         ],
       );
     });

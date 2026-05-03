@@ -23,22 +23,12 @@ export const inboundRouter = Router();
  */
 inboundRouter.post('/api/inbound/property-surveyed', async (req, res) => {
   const event = req.body as Partial<PropertySurveyedEvent>;
-  if (!event.surveyId || !event.propertyId) {
-    res.status(400).json({ error: 'surveyId, propertyId are required' });
+  if (!event.propertyId) {
+    res.status(400).json({ error: 'propertyId is required' });
     return;
   }
-  // fill defaults so partial payloads still work
-  const full: PropertySurveyedEvent = {
-    surveyId: event.surveyId,
-    propertyId: event.propertyId,
-    address: event.address ?? '(not provided)',
-    areaSqm: event.areaSqm ?? 0,
-    estimatedValue: event.estimatedValue ?? 0,
-    zoneType: event.zoneType ?? 'UNKNOWN',
-    sellerId: event.sellerId,
-    sellerName: event.sellerName ?? '(not provided)',
-    sellerContact: event.sellerContact ?? '(not provided)',
-  };
+  // Pass through the rich event as-is — receiveSurvey handles missing fields
+  const full: PropertySurveyedEvent = event as PropertySurveyedEvent;
 
   try {
     const out = await AcquisitionService.receiveSurvey(full);
