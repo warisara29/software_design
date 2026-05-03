@@ -31,6 +31,10 @@ export class Contract {
   statusKyc?: string;
   paymentSecondStatus?: string;
   secondPayment?: number;
+  // Internal-only: distinguishes willing-to-buy vs final purchase contract.
+  // Stored in DB so we can list "all willing contracts" or "all purchase contracts"
+  // separately. Not exposed in outbound events — other teams keep their existing schemas.
+  contractKind?: 'WILLING' | 'PURCHASE';
 
   /**
    * Command: CreateContractDraft
@@ -44,6 +48,7 @@ export class Contract {
     templateId: string;
     parties: ContractParties;
     fileUrl: string;
+    contractKind?: 'WILLING' | 'PURCHASE';
     projectName?: string;
     location?: string;
     areaUnit?: string;
@@ -64,6 +69,7 @@ export class Contract {
     c.createdAt = new Date().toISOString();
     c.parties = input.parties;
     c.contractDraft = ContractDraft.create(input.templateId, input.fileUrl);
+    c.contractKind = input.contractKind;
     c.projectName = input.projectName;
     c.location = input.location;
     c.areaUnit = input.areaUnit;

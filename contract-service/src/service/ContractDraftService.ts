@@ -47,9 +47,12 @@ export interface ContractDraftCreatedEvent {
  * รับ BookingConfirmedEvent → สร้าง Contract aggregate → คืน ContractDraftCreated event
  */
 export const ContractDraftService = {
-  async createContractDraft(event: BookingConfirmedEvent): Promise<ContractDraftCreatedEvent> {
+  async createContractDraft(
+    event: BookingConfirmedEvent,
+    kind: 'WILLING' | 'PURCHASE' = 'WILLING',
+  ): Promise<ContractDraftCreatedEvent> {
     console.log(
-      `[Command] CreateContractDraft — bookingId=${event.bookingId}, unitId=${event.unitId}, customerId=${event.customerId}, price=${event.pricePerUnit ?? 'n/a'}`,
+      `[Command] CreateContractDraft (${kind}) — bookingId=${event.bookingId}, unitId=${event.unitId}, customerId=${event.customerId}, price=${event.pricePerUnit ?? 'n/a'}`,
     );
 
     // Coerce string codes (e.g. "PROP-001") to deterministic UUIDs
@@ -72,6 +75,7 @@ export const ContractDraftService = {
       templateId,
       parties,
       fileUrl,
+      contractKind: kind,
       projectName: event.projectName,
       location: event.location,
       areaUnit: event.areaUnit,
@@ -85,7 +89,7 @@ export const ContractDraftService = {
     await ContractRepository.save(contract);
 
     console.log(
-      `[Domain Event] ContractDraftCreated: contractId=${contract.contractId}, status=DRAFT, totalPrice=${contract.totalPrice ?? 'n/a'}`,
+      `[Domain Event] ContractDraftCreated (${kind}): contractId=${contract.contractId}, status=DRAFT, totalPrice=${contract.totalPrice ?? 'n/a'}`,
     );
 
     return {
