@@ -30,7 +30,6 @@ export interface ContractDraftCreatedEvent {
   templateId: string;
   createdAt: string;
   draftedAt: string;
-  contractKind?: 'WILLING' | 'PURCHASE';
   // Booking metadata passed through to subscribers (Payment, Post-sale, ...)
   projectName?: string;
   location?: string;
@@ -48,12 +47,9 @@ export interface ContractDraftCreatedEvent {
  * รับ BookingConfirmedEvent → สร้าง Contract aggregate → คืน ContractDraftCreated event
  */
 export const ContractDraftService = {
-  async createContractDraft(
-    event: BookingConfirmedEvent,
-    kind: 'WILLING' | 'PURCHASE' = 'WILLING',
-  ): Promise<ContractDraftCreatedEvent> {
+  async createContractDraft(event: BookingConfirmedEvent): Promise<ContractDraftCreatedEvent> {
     console.log(
-      `[Command] CreateContractDraft (${kind}) — bookingId=${event.bookingId}, unitId=${event.unitId}, customerId=${event.customerId}, price=${event.pricePerUnit ?? 'n/a'}`,
+      `[Command] CreateContractDraft — bookingId=${event.bookingId}, unitId=${event.unitId}, customerId=${event.customerId}, price=${event.pricePerUnit ?? 'n/a'}`,
     );
 
     // Coerce string codes (e.g. "PROP-001") to deterministic UUIDs
@@ -67,8 +63,7 @@ export const ContractDraftService = {
 
     // Factory method (Aggregate Root)
     const templateId = uuidv4();
-    const slug = kind === 'WILLING' ? 'willing-draft' : 'purchase-draft';
-    const fileUrl = `https://storage.realestate.com/contracts/${slug}-${uuidv4()}.pdf`;
+    const fileUrl = `https://storage.realestate.com/contracts/draft-${uuidv4()}.pdf`;
 
     const contract = Contract.createContractDraft({
       bookingId,
@@ -77,7 +72,6 @@ export const ContractDraftService = {
       templateId,
       parties,
       fileUrl,
-      contractKind: kind,
       projectName: event.projectName,
       location: event.location,
       areaUnit: event.areaUnit,
@@ -91,7 +85,7 @@ export const ContractDraftService = {
     await ContractRepository.save(contract);
 
     console.log(
-      `[Domain Event] ContractDraftCreated (${kind}): contractId=${contract.contractId}, status=DRAFT, totalPrice=${contract.totalPrice ?? 'n/a'}`,
+      `[Domain Event] ContractDraftCreated: contractId=${contract.contractId}, status=DRAFT, totalPrice=${contract.totalPrice ?? 'n/a'}`,
     );
 
     return {
@@ -104,7 +98,6 @@ export const ContractDraftService = {
       templateId: contract.templateId,
       createdAt: contract.createdAt,
       draftedAt: contract.contractDraft!.draftedAt,
-      contractKind: contract.contractKind,
       projectName: contract.projectName,
       location: contract.location,
       areaUnit: contract.areaUnit,

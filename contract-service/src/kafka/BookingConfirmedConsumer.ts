@@ -62,42 +62,39 @@ async function handleBookingConfirmed(raw: string): Promise<void> {
   } else {
     event = parsed as BookingConfirmedEvent;
   }
+  const draftCreated = await ContractDraftService.createContractDraft(event);
 
-  // Stage 1 — willing-to-buy contract (สัญญาจะซื้อจะขาย)
-  const willing = await ContractDraftService.createContractDraft(event, 'WILLING');
-
-  // Flow 2 event 6 — willing.contract.drafted
+  // Flow 2 event 6 — willing-to-buy contract drafted
   await WillingContractDraftedProducer.send({
     willingContractId: uuidv4(),
-    contractId: willing.contractId,
-    bookingId: willing.bookingId,
-    unitId: willing.unitId,
-    customerId: willing.customerId,
-    fileUrl: willing.fileUrl,
-    draftedAt: willing.draftedAt,
-    projectName: willing.projectName,
-    location: willing.location,
-    areaUnit: willing.areaUnit,
-    roomType: willing.roomType,
-    roomNumber: willing.roomNumber,
-    totalPrice: willing.totalPrice,
-    statusKyc: willing.statusKyc,
-    paymentSecondStatus: willing.paymentSecondStatus,
-    secondPayment: willing.secondPayment,
-    contractKind: 'WILLING',
+    contractId: draftCreated.contractId,
+    bookingId: draftCreated.bookingId,
+    unitId: draftCreated.unitId,
+    customerId: draftCreated.customerId,
+    fileUrl: draftCreated.fileUrl,
+    draftedAt: draftCreated.draftedAt,
+    projectName: draftCreated.projectName,
+    location: draftCreated.location,
+    areaUnit: draftCreated.areaUnit,
+    roomType: draftCreated.roomType,
+    roomNumber: draftCreated.roomNumber,
+    totalPrice: draftCreated.totalPrice,
+    statusKyc: draftCreated.statusKyc,
+    paymentSecondStatus: draftCreated.paymentSecondStatus,
+    secondPayment: draftCreated.secondPayment,
   });
   console.log(
-    `[Flow 2] ✅ DONE publish willing.contract.drafted — willingContractId=${willing.contractId}`,
+    `[Flow 2] ✅ DONE publish willing.contract.drafted — contractId=${draftCreated.contractId}`,
   );
 
   // KYC bypass — proceed immediately with property+lease inspection
   // (CEO KYC step skipped; Legal continues straight to next stages)
 
-  // Flow 2 event 8 — property + lease inspected (refers to willing contract)
+  // Flow 2 event 8 — property + lease inspected
   await PropertyLeaseInspectedProducer.send({
     inspectionId: uuidv4(),
-    contractId: willing.contractId,
-    unitId: willing.unitId,
+    contractId: draftCreated.contractId,
+    unitId: draftCreated.unitId,
     hasOutstandingLease: false,
     hasEncumbrance: false,
     inspectionResult: 'PASS',
@@ -105,15 +102,13 @@ async function handleBookingConfirmed(raw: string): Promise<void> {
     inspectedAt: new Date().toISOString(),
   });
   console.log(
-    `[Flow 2] ✅ DONE publish property.lease.inspected — willingContractId=${willing.contractId}`,
+    `[Flow 2] ✅ DONE publish property.lease.inspected — contractId=${draftCreated.contractId}`,
   );
 
-  // Stage 2 — purchase contract (สัญญาขายจริง) — separate row, distinct contractId
-  const purchase = await ContractDraftService.createContractDraft(event, 'PURCHASE');
-
-  // Flow 2 event 9 — contract.drafted
-  await PurchaseContractDraftedProducer.send(purchase);
+  // Flow 2 event 9 — purchase contract drafted (สัญญาขายจริง)
+  // Pass through draftCreated as-is — includes all booking metadata captured from Sales
+  await PurchaseContractDraftedProducer.send(draftCreated);
   console.log(
-    `[Flow 2] ✅ DONE publish contract.drafted (purchase contract) — purchaseContractId=${purchase.contractId}`,
+    `[Flow 2] ✅ DONE publish contract.drafted (purchase contract) — contractId=${draftCreated.contractId}`,
   );
 }

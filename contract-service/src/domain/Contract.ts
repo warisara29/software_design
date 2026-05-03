@@ -31,9 +31,6 @@ export class Contract {
   statusKyc?: string;
   paymentSecondStatus?: string;
   secondPayment?: number;
-  // Distinguishes a willing-to-buy draft from the final purchase contract.
-  // Same booking → 2 Contract rows: WILLING (after booking) + PURCHASE (after lease inspect).
-  contractKind?: 'WILLING' | 'PURCHASE';
 
   /**
    * Command: CreateContractDraft
@@ -47,7 +44,6 @@ export class Contract {
     templateId: string;
     parties: ContractParties;
     fileUrl: string;
-    contractKind?: 'WILLING' | 'PURCHASE';
     projectName?: string;
     location?: string;
     areaUnit?: string;
@@ -68,7 +64,6 @@ export class Contract {
     c.createdAt = new Date().toISOString();
     c.parties = input.parties;
     c.contractDraft = ContractDraft.create(input.templateId, input.fileUrl);
-    c.contractKind = input.contractKind;
     c.projectName = input.projectName;
     c.location = input.location;
     c.areaUnit = input.areaUnit;
