@@ -71,14 +71,20 @@ export const WarrantyVerificationService = {
     const customerId = coerceToUuid(event.customerId);
     const defectId = coerceToUuid(event.defectId);
 
+    const reportedAt = event.reportedAt ?? new Date().toISOString();
+    const reportedTime = new Date(reportedAt);
+
     let warranty = await WarrantyRepository.findByContractId(contractId);
     if (!warranty) {
       console.warn(
         `[Service] No warranty found for contractId=${contractId}, creating default 1y full-scope warranty`,
       );
-      const now = new Date();
-      const ends = new Date(now.getTime() + ONE_YEAR_SECONDS * 1000);
-      const period = new CoveragePeriod(now.toISOString(), ends.toISOString());
+      // Anchor coverage on reportedAt (with a small buffer) so a defect that
+      // arrives slightly before "now" doesn't fall outside the period due to
+      // clock skew between Post-sale and Legal.
+      const anchor = new Date(Math.min(reportedTime.getTime(), Date.now()) - 60_000);
+      const ends = new Date(anchor.getTime() + ONE_YEAR_SECONDS * 1000);
+      const period = new CoveragePeriod(anchor.toISOString(), ends.toISOString());
       const scope = new CoverageScope(Object.values(DefectCategory));
       warranty = Warranty.register({
         contractId,
@@ -91,7 +97,6 @@ export const WarrantyVerificationService = {
     }
 
     const category = parseDefectCategory(event.defectCategory);
-    const reportedAt = event.reportedAt ?? new Date().toISOString();
 
     const claim = warranty.verifyClaim({
       defectId,
