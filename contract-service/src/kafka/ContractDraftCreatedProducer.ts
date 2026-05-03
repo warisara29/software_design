@@ -2,7 +2,10 @@ import { config } from '../config.js';
 import { producer } from './client.js';
 import type { ContractDraftCreatedEvent } from '../service/ContractDraftService.js';
 import type { WillingContractDraftedEvent } from '../event/WillingContractDraftedEvent.js';
-import type { PropertyLeaseInspectedEvent } from '../event/PropertyLeaseInspectedEvent.js';
+// PropertyLeaseInspectedProducer has moved to its own bounded-context file:
+//   ./PropertyLeaseInspectedProducer.ts
+// (kept re-exported below for backward-compatibility with REST inbound routes)
+export { PropertyLeaseInspectedProducer } from './PropertyLeaseInspectedProducer.js';
 
 function logProducerSend(topic: string, event: unknown): void {
   console.log(`\n[Producer] → ${topic}\n${JSON.stringify(event, null, 2)}`);
@@ -29,20 +32,6 @@ export const PurchaseContractDraftedProducer = {
 export const WillingContractDraftedProducer = {
   async send(event: WillingContractDraftedEvent): Promise<void> {
     const topic = config.topics.willingContractDrafted;
-    await producer.send({
-      topic,
-      messages: [{ key: event.contractId, value: JSON.stringify(event) }],
-    });
-    logProducerSend(topic, event);
-  },
-};
-
-/**
- * Flow 2 event 8 — property and land lease inspected by Legal
- */
-export const PropertyLeaseInspectedProducer = {
-  async send(event: PropertyLeaseInspectedEvent): Promise<void> {
-    const topic = config.topics.propertyLeaseInspected;
     await producer.send({
       topic,
       messages: [{ key: event.contractId, value: JSON.stringify(event) }],

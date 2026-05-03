@@ -6,7 +6,6 @@ import { ContractDraftService, type BookingConfirmedEvent } from '../service/Con
 import {
   PurchaseContractDraftedProducer,
   WillingContractDraftedProducer,
-  PropertyLeaseInspectedProducer,
 } from './ContractDraftCreatedProducer.js';
 import {
   isSaleBookedCompleteEvent,
@@ -21,11 +20,13 @@ const BOOKING_TOPIC = config.topics.bookingConfirmed;
  *
  * sale.booked.complete (Sales) →
  *   1. Legal drafts willing contract       → publish willing.contract.drafted
- *   2. Legal inspects property + lease     → publish property.lease.inspected
- *   3. Legal drafts purchase contract      → publish contract.drafted
+ *   2. Legal drafts purchase contract      → publish contract.drafted
  *
- * KYC step (ceo.kyc.completed) is intentionally bypassed — Legal proceeds
- * immediately after booking, all 3 events fire from a single consumer run.
+ * KYC step (ceo.kyc.completed) is intentionally bypassed.
+ * The property + lease inspection step lives in its own bounded
+ * context — see PropertyLeaseInspectionConsumer, which subscribes
+ * willing.contract.drafted on its own consumer-group and publishes
+ * property.lease.inspected independently.
  */
 export async function startBookingConfirmedConsumer(): Promise<void> {
   try {
@@ -89,23 +90,11 @@ async function handleBookingConfirmed(raw: string): Promise<void> {
     `[Flow 2] ✅ DONE publish willing.contract.drafted — contractId=${willing.contractId}`,
   );
 
-  // KYC bypass — proceed immediately with property+lease inspection
-  // (CEO KYC step skipped; Legal continues straight to next stages)
-
-  // Flow 2 event 8 — property + lease inspected (refers to willing contract)
-  await PropertyLeaseInspectedProducer.send({
-    inspectionId: uuidv4(),
-    contractId: willing.contractId,
-    unitId: willing.unitId,
-    hasOutstandingLease: false,
-    hasEncumbrance: false,
-    inspectionResult: 'PASS',
-    notes: 'Property title clean; no outstanding lease or encumbrance found',
-    inspectedAt: new Date().toISOString(),
-  });
-  console.log(
-    `[Flow 2] ✅ DONE publish property.lease.inspected — contractId=${willing.contractId}`,
-  );
+  // KYC bypass — proceed immediately with the purchase contract.
+  // (CEO KYC step is skipped; the property + lease inspection step is
+  //  now owned by PropertyLeaseInspectionConsumer — it subscribes
+  //  willing.contract.drafted and publishes property.lease.inspected
+  //  on its own.)
 
   // Stage 2 — purchase contract (สัญญาขายจริง) — saves DB row with contract_kind=PURCHASE
   const purchase = await ContractDraftService.createContractDraft(event, 'PURCHASE');

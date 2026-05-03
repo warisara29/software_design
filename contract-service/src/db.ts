@@ -85,5 +85,27 @@ export async function initSchema(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_contracts_kind ON ${SCHEMA}.contracts(contract_kind);
   `);
 
+  // Property + Lease inspection — own table for the dedicated bounded context
+  // (Task 2: each event = 1 microservice piece with its own aggregate / persistence)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS ${SCHEMA}.property_inspections (
+      inspection_id          UUID PRIMARY KEY,
+      contract_id            UUID NOT NULL,
+      unit_id                UUID NOT NULL,
+      inspected_by           TEXT NOT NULL,
+      status                 TEXT,
+      has_outstanding_lease  BOOLEAN,
+      has_encumbrance        BOOLEAN,
+      notes                  TEXT,
+      inspected_at           TIMESTAMPTZ,
+      created_at             TIMESTAMPTZ NOT NULL,
+      version                INTEGER NOT NULL DEFAULT 0
+    );
+  `);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_property_inspections_contract
+      ON ${SCHEMA}.property_inspections(contract_id);
+  `);
+
   console.log(`[DB] Schema "${SCHEMA}" ready`);
 }

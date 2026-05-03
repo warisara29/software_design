@@ -23,3 +23,13 @@ export const kafka = new Kafka({
 
 export const producer = kafka.producer();
 export const consumer = kafka.consumer({ groupId: config.kafka.groupId });
+
+/**
+ * Dedicated consumer for the Property Inspection bounded context.
+ * Lives in its own consumer-group so subscriptions can be wired up
+ * independently of the booking consumer (each bounded context is its
+ * own microservice piece per Task 2 spec).
+ */
+export const propertyInspectionConsumer = kafka.consumer({
+  groupId: `${config.kafka.groupId}-property-inspection`,
+});

@@ -3,8 +3,9 @@ import swaggerUi from 'swagger-ui-express';
 import { config } from './config.js';
 import { initSchema } from './db.js';
 import { openapiSpec } from './openapi.js';
-import { consumer, producer } from './kafka/client.js';
+import { consumer, producer, propertyInspectionConsumer } from './kafka/client.js';
 import { startBookingConfirmedConsumer } from './kafka/BookingConfirmedConsumer.js';
+import { startPropertyLeaseInspectionConsumer } from './kafka/PropertyLeaseInspectionConsumer.js';
 import { testRouter } from './routes/test.js';
 import { queryRouter } from './routes/query.js';
 import { debugRouter } from './routes/debug.js';
@@ -20,9 +21,13 @@ async function main(): Promise<void> {
     // ต้องสร้าง topics ผ่าน Confluent UI / admin โดยตรง
     await producer.connect();
     await consumer.connect();
+    await propertyInspectionConsumer.connect();
     // Background — don't block boot if topics don't exist yet
     startBookingConfirmedConsumer().catch((err) =>
       console.warn('[Kafka] Consumer crashed:', (err as Error).message),
+    );
+    startPropertyLeaseInspectionConsumer().catch((err) =>
+      console.warn('[Kafka:PropertyInspection] Consumer crashed:', (err as Error).message),
     );
   } catch (err) {
     console.warn('[Kafka] Setup failed — REST API still works:', (err as Error).message);
@@ -47,6 +52,7 @@ async function main(): Promise<void> {
     console.log(`[Shutdown] ${signal} received`);
     try {
       await consumer.disconnect();
+      await propertyInspectionConsumer.disconnect();
       await producer.disconnect();
     } finally {
       process.exit(0);
