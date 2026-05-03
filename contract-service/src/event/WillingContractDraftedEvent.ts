@@ -21,4 +21,5 @@ export interface WillingContractDraftedEvent {
   statusKyc?: string;
   paymentSecondStatus?: string;
   secondPayment?: number;
+  contractKind?: 'WILLING' | 'PURCHASE';
 }

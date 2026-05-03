@@ -78,7 +78,11 @@ export async function initSchema(): Promise<void> {
       ADD COLUMN IF NOT EXISTS room_number            TEXT,
       ADD COLUMN IF NOT EXISTS status_kyc             TEXT,
       ADD COLUMN IF NOT EXISTS payment_second_status  TEXT,
-      ADD COLUMN IF NOT EXISTS second_payment         NUMERIC;
+      ADD COLUMN IF NOT EXISTS second_payment         NUMERIC,
+      ADD COLUMN IF NOT EXISTS contract_kind          TEXT;
+  `);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_contracts_kind ON ${SCHEMA}.contracts(contract_kind);
   `);
 
   console.log(`[DB] Schema "${SCHEMA}" ready`);
