@@ -6,34 +6,35 @@ import { producer } from '../kafka/client.js';
 export const testRouter = Router();
 
 /**
- * Simulator: publish sale.booked.complete (Sales' schema)
+ * Simulator: publish sale.booked.complete
  *
- * Mimics the actual event Sales would publish — string codes for IDs,
- * full booking detail including KYC + property info.
+ * Mock payload uses already-coerced UUIDs (contractId, bookingId, unitId,
+ * customerId) plus secondPayment — matches the format that the downstream
+ * contract.drafted event carries.
  *
  * Body: optional override of any field
  */
 testRouter.post('/api/test/booking-confirmed', async (req, res) => {
-  const reservationCount = Math.floor(Math.random() * 1000);
+  const now = new Date().toISOString();
+  const draftId = uuidv4();
   const payload = {
-    ProjectName: req.body?.ProjectName ?? 'The Riverside Condo',
-    'Reservation ID': req.body?.['Reservation ID'] ?? `RSV-${reservationCount.toString().padStart(4, '0')}`,
-    ContractID: req.body?.ContractID ?? `CT-${reservationCount.toString().padStart(4, '0')}`,
-    PropertyID: req.body?.PropertyID ?? 'PROP-001',
-    Location: req.body?.Location ?? '123 Sukhumvit Rd, Bangkok',
-    'Customer ID': req.body?.['Customer ID'] ?? 'CUST-001',
-    'Area unit/layout': req.body?.['Area unit/layout'] ?? '1-bedroom 35sqm',
-    'room type': req.body?.['room type'] ?? 'Standard',
-    'Price per unit': req.body?.['Price per unit'] ?? 5_500_000,
-    'room number': req.body?.['room number'] ?? '12-01',
-    StatusKYC: req.body?.StatusKYC ?? 'PASSED',
-    PaymentSecondStatus: req.body?.PaymentSecondStatus ?? 'PENDING',
-    secondPayment: req.body?.secondPayment ?? 4_400_000,
+    contractId: req.body?.contractId ?? uuidv4(),
+    bookingId: req.body?.bookingId ?? 'f625036d-3942-5a4a-bc42-823f56e6b1c1',
+    unitId: req.body?.unitId ?? 'd097741b-5be0-509a-8216-b6d7a2f437b4',
+    customerId: req.body?.customerId ?? '6cbd2556-41e0-5510-a08f-95a2450f7406',
+    status: req.body?.status ?? 'DRAFT',
+    fileUrl:
+      req.body?.fileUrl ?? `https://storage.realestate.com/contracts/draft-${draftId}.pdf`,
+    templateId: req.body?.templateId ?? uuidv4(),
+    createdAt: req.body?.createdAt ?? now,
+    draftedAt: req.body?.draftedAt ?? now,
+    secondPayment:
+      req.body?.secondPayment ?? Math.floor(Math.random() * 200_000_000) + 1_000_000,
   };
 
   await producer.send({
     topic: config.topics.bookingConfirmed,
-    messages: [{ key: payload.ContractID, value: JSON.stringify(payload) }],
+    messages: [{ key: payload.contractId, value: JSON.stringify(payload) }],
   });
 
   res.json({
